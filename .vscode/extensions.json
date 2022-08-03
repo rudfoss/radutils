@@ -1,5 +1,5 @@
 {
-  "recommendations": [
+	"recommendations": [
 		"nrwl.angular-console",
 		"esbenp.prettier-vscode",
 		"orta.vscode-jest",
@@ -8,5 +8,5 @@
 		"tobermory.es6-string-html",
 		"styled-components.vscode-styled-components",
 		"firsttris.vscode-jest-runner"
-  ]
+	]
 }
