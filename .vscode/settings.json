@@ -1,0 +1,38 @@
+{
+	"files.eol": "\n",
+	"editor.rulers": [120],
+	"editor.formatOnSave": true,
+	"barrelr.useDoubleQuotes": true,
+	"barrelr.useSemiColons": false,
+	"barrelr.lineEnding": "LF",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": true
+	},
+	"[typescript]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescriptreact]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[javascript]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[json]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[css]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[azure-pipelines]": {
+		"editor.formatOnSave": false
+	},
+	"[yaml]": {
+		"editor.formatOnSave": false
+	},
+	"typescript.tsdk": "node_modules\\typescript\\lib"
+}
