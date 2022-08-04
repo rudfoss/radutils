@@ -1,1 +1,3 @@
-export * from "./lib/config-builder"
+export * from "./lib"
+import { ConfigBuilder } from "./lib"
+export default ConfigBuilder

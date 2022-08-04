@@ -1,11 +1,13 @@
-# config-builder
+# `@radutils` Config Builder
 
-This library was generated with [Nx](https://nx.dev).
+```
+npm install @radutils/config-builder
+```
 
-## Building
+`@radutils` Config Builder provides a type-safe way of compiling configuration options for your application. It separates the configuration definition from the source or sources and supports parallel resolution.
 
-Run `nx build config-builder` to build the library.
+## Usage
 
-## Running unit tests
-
-Run `nx test config-builder` to execute the unit tests via [Jest](https://jestjs.io).
+```typescript
+const builder = new ConfigBuilder()
+```

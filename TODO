@@ -1,22 +1,30 @@
-Projects:
-	Config-builder (the config builder backed by endpoints) **
-		Config Builder:
-			☐ Core builder class
-		Loader framework:
-				☐ Load config by key
-				☐ Preload config using `prep` function
-				☐ Hook for post-resolution logic (usefull for caching)
-		Config Loader Azure:
-			☐ App Configuration support
-			☐ Content type resolver support
-			☐ Key Vault reference support
-		Config Loader ENV:
-			☐ ENV Loader
-		Config Loader JSON:
-			☐ JSON Loader
-		Config Loader .rc:
-			☐ .rc Loader
-		Config Loader Cached:
-			☐ Cached data loader (returns cached version of the config data from disk after initial load)
+Utils:
+	Config Builder:
+		☐ Core builder class
+		☐ Loader support
+		☐ Documentation
+		☐ Examples
+	Config Loader Azure:
+		Azure App Configuration and/or Azure Key Vault
+		☐ App Configuration support
+		☐ Content type resolver support
+		☐ Key Vault reference support
+		☐ Documentation
+	Config Loader ENV:
+		Load from ENV variables
+		☐ ENV Loader
+		☐ Documentation
+	Config Loader JSON:
+		Load from JSON file or static JSON object
+		☐ JSON Loader
+		☐ Documentation
+	Config Loader .rc:
+		Load from .rc and .rc compatible sources (low-priority)
+		☐ .rc Loader
+		☐ Documentation
+	Config Loader Cached:
+		Cache config data locally as a file in `node_modules/.cache` for quick restarts.
+		☐ Cached data loader (returns cached version of the config data from disk after initial load)
+		☐ Documentation
 	Query manager (with caching, like DataQuery) *
 	Observable Map *

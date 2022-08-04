@@ -10,8 +10,7 @@
 				"outputPath": "dist/libs/config-builder",
 				"main": "libs/config-builder/src/index.ts",
 				"tsConfig": "libs/config-builder/tsconfig.lib.json",
-				"assets": ["libs/config-builder/*.md"],
-				"skipTypeCheck": true
+				"assets": ["libs/config-builder/*.md"]
 			}
 		},
 		"publish": {
