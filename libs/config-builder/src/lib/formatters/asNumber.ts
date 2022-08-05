@@ -2,34 +2,38 @@ import { Formatter } from "../ConfigBuilderTypes"
 
 export interface AsNumberFormatterOptions {
 	/**
-	 * If set will fix the number to the specified number of decimals.
+	 * If set will fix the number to the specified number of decimals using `Number.prototype.toFixed`.
 	 */
-	decimalDigits?: number
+	toFixed?: number
 }
 
 /**
  * Converts the value to a number. If the value cannot be converted returns `NaN`.
  */
 export const asNumber =
-	({ decimalDigits }: AsNumberFormatterOptions): Formatter<number> =>
+	({ toFixed }: AsNumberFormatterOptions = {}): Formatter<number> =>
 	(value) => {
 		let numValue = NaN
 		if (typeof value === "string") {
-			numValue = parseFloat(value)
+			if (value.startsWith("0x")) {
+				numValue = parseInt(value)
+			} else {
+				numValue = parseFloat(value)
+			}
 		}
 		if (typeof value === "number") {
 			numValue = value
 		}
 
-		if (decimalDigits !== undefined) {
-			numValue = parseFloat(numValue.toFixed(decimalDigits))
+		if (toFixed !== undefined) {
+			numValue = parseFloat(numValue.toFixed(toFixed))
 		}
 
 		return numValue
 	}
 
 /**
- * Converts the number to an integer.
- * @alias `asNumber({ decimalDigits: 0 })`
+ * Converts the number to an integer using rounding to 0 decimals with `toFixed`.
+ * @alias `asNumber({ toFixed: 0 })`
  */
-export const asInt = () => asNumber({ decimalDigits: 0 })
+export const asInt = () => asNumber({ toFixed: 0 })

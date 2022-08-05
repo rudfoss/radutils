@@ -44,11 +44,14 @@ export type RequiredConfig = <TValueOut = string>(key: string | string[], format
 /**
  * A function that defines an optional configuration key. Optional keys may be undefined and will result in an undefined value unless a default value is also specified.
  */
-export type OptionalConfig = <TValueOut = undefined>(
-	key: string | string[],
-	defaultValue?: TValueOut,
-	formatter?: Formatter<TValueOut>
-) => TValueOut
+export interface OptionalConfig {
+	<TValueOut = unknown>(key: string | string[]): TValueOut | undefined
+	<TValueOut>(key: string | string[], defaultValue: TValueOut): TValueOut
+	<TValueOut = unknown>(key: string | string[], defaultValue: undefined, formatter: Formatter<TValueOut>):
+		| TValueOut
+		| undefined
+	<TValueOut>(key: string | string[], defaultValue: unknown, formatter: Formatter<TValueOut>): TValueOut
+}
 
 /**
  * The build function describes a configuration object with required and optional configuration values. Static values are also supported. It receives two functions that can be used to reference config keys: `required` and `optional`.

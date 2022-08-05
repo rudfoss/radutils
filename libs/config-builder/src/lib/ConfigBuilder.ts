@@ -8,7 +8,6 @@ import {
 	ConfigBuilderMissingRequiredKeysError,
 	ConfigBuilderResolveValueError
 } from "./errors"
-import { asString } from "./formatters"
 import { findFirstOrDefault } from "./utils/findFirstOrDefault"
 import { setMerger } from "./utils/setMerger"
 
@@ -46,17 +45,17 @@ export class ConfigBuilder {
 	 */
 	constructor(protected readonly sources: [ConfigSource, ...ConfigSource[]]) {
 		for (const source of sources) {
-			if (source.onBeforeBuild) {
-				this.lifecycleListeners.onBeforeBuild.add({ fn: source.onBeforeBuild, self: source })
+			if (source.onBuildStart) {
+				this.lifecycleListeners.onBuildStart.add({ fn: source.onBuildStart, self: source })
 			}
-			if (source.onSuccess) {
-				this.lifecycleListeners.onSuccess.add({ fn: source.onSuccess, self: source })
+			if (source.onBuildSuccess) {
+				this.lifecycleListeners.onBuildSuccess.add({ fn: source.onBuildSuccess, self: source })
 			}
-			if (source.onError) {
-				this.lifecycleListeners.onError.add({ fn: source.onError, self: source })
+			if (source.onBuildError) {
+				this.lifecycleListeners.onBuildError.add({ fn: source.onBuildError, self: source })
 			}
-			if (source.onSettled) {
-				this.lifecycleListeners.onSettled.add({ fn: source.onSettled, self: source })
+			if (source.onBuildSettled) {
+				this.lifecycleListeners.onBuildSettled.add({ fn: source.onBuildSettled, self: source })
 			}
 		}
 	}
@@ -83,11 +82,11 @@ export class ConfigBuilder {
 		}, "onBuildError")
 	}
 	protected async runOnBuildSettled<TConfig>(config?: TConfig, error?: ConfigBuilderError) {
-		try {
-			return error ? this.runOnBuildError(error) : this.runOnBuildSuccess(config)
-		} catch (err) {
-			throw new ConfigBuilderLifecycleError((err as ConfigBuilderLifecycleError).innerError, "onBuildSettled")
-		}
+		return ConfigBuilderLifecycleError.wrap(async () => {
+			for (const { fn, self } of this.lifecycleListeners.onBuildSettled) {
+				await fn?.call(self, { config, error })
+			}
+		}, "onBuildSettled")
 	}
 
 	protected async resolveConfigKeyValues(keys: Iterable<string>) {
@@ -116,19 +115,18 @@ export class ConfigBuilder {
 			if (isPlaceholder(value)) {
 				const configValue = findFirstOrDefault(value.keys, keyValues, value.defaultValue)
 				if (configValue === undefined && value.required) {
-					setMerger(missingRequiredKeys)(value.keys[0])
+					setMerger(missingRequiredKeys)([value.keys[0]])
+					continue
 				}
-				try {
-					configObject[key] = value.formatter ? value.formatter(configValue) : configValue
-				} catch (err) {
-					throw new ConfigBuilderFormatterError(err as any)
-				}
+				configObject[key] = ConfigBuilderFormatterError.wrap(() =>
+					value.formatter ? value.formatter(configValue) : configValue
+				)
 				continue
 			}
 
 			// both actual objects AND arrays are of type "object". Therefore this will catch both.
 			if (typeof value === "object") {
-				configObject[key] = this.replaceConfigPlaceholders(configObject[key] as any, keyValues, missingRequiredKeys)
+				configObject[key] = this.replaceConfigPlaceholders(value as any, keyValues, missingRequiredKeys)
 				continue
 			}
 
@@ -142,53 +140,59 @@ export class ConfigBuilder {
 	 * @param buildFn
 	 */
 	public async build<TConfig>(buildFn: BuildFunction<TConfig>): Promise<TConfig> {
+		let finalConfig: TConfig | undefined = undefined
+		let configBuilderError: ConfigBuilderError | undefined = undefined
+
+		const requiredKeys = setMerger<string>()
+		const optionalKeys = setMerger<string>()
+
+		const required: RequiredConfig = (key, formatter) => {
+			const keys = Array.isArray(key) ? key : [key]
+			requiredKeys(keys)
+			return Object.freeze({
+				_configBuilderType: CONFIG_BUILDER_PLACEHOLDER_SYMBOL,
+				keys,
+				formatter,
+				required: true
+			} as ConfigBuilderPlaceholder) as any
+		}
+		const optional: OptionalConfig = (key: string | string[], defaultValue?: any, formatter?: Formatter<any>) => {
+			const keys = Array.isArray(key) ? key : [key]
+			optionalKeys(keys)
+			return Object.freeze({
+				_configBuilderType: CONFIG_BUILDER_PLACEHOLDER_SYMBOL,
+				keys,
+				defaultValue,
+				formatter,
+				required: false
+			} as ConfigBuilderPlaceholder) as any
+		}
+
 		try {
-			const requiredKeys = setMerger<string>()
-			const optionalKeys = setMerger<string>()
-
-			const required: RequiredConfig = (key, formatter) => {
-				const keys = Array.isArray(key) ? key : [key]
-				requiredKeys(keys)
-				return Object.freeze({
-					_configBuilderType: CONFIG_BUILDER_PLACEHOLDER_SYMBOL,
-					keys,
-					formatter: formatter ?? asString,
-					required: true
-				} as ConfigBuilderPlaceholder) as any
-			}
-			const optional: OptionalConfig = (key, defaultValue, formatter) => {
-				const keys = Array.isArray(key) ? key : [key]
-				optionalKeys(keys)
-				return Object.freeze({
-					_configBuilderType: CONFIG_BUILDER_PLACEHOLDER_SYMBOL,
-					keys,
-					defaultValue,
-					formatter: formatter ?? asString,
-					required: false
-				} as ConfigBuilderPlaceholder) as any
-			}
-
-			const configWithPlaceholders: Record<string, unknown> = ConfigBuilderBuildFunctionError.wrap(() =>
+			const configWithPlaceholders: Record<string, unknown> = (await ConfigBuilderBuildFunctionError.wrap(() =>
 				buildFn(required, optional)
-			) as any
+			)) as any
 			await this.runOnBuildStart(requiredKeys.set, optionalKeys.set)
 
 			const keyValues = await this.resolveConfigKeyValues(setMerger<string>()(requiredKeys.set)(optionalKeys.set).set)
 			const missingRequiredKeys = new Set<string>()
-			const configObject = this.replaceConfigPlaceholders(configWithPlaceholders, keyValues, missingRequiredKeys)
+			const config = this.replaceConfigPlaceholders(configWithPlaceholders, keyValues, missingRequiredKeys)
+			finalConfig = config
 
 			if (missingRequiredKeys.size > 0) {
 				throw new ConfigBuilderMissingRequiredKeysError(Array.from(missingRequiredKeys))
 			}
-
-			await this.runOnBuildSuccess(configObject)
-			await this.runOnBuildSettled(configObject)
-
-			return configObject as TConfig
 		} catch (err) {
+			configBuilderError = err as any
 			await this.runOnBuildError(err as any)
-			await this.runOnBuildSettled(undefined, err as any)
 			throw err
+		} finally {
+			await this.runOnBuildSettled(finalConfig, configBuilderError)
 		}
+
+		await this.runOnBuildSuccess(finalConfig)
+
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+		return finalConfig!
 	}
 }

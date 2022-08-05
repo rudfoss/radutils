@@ -9,7 +9,7 @@ export class ConfigBuilderFormatterError extends ConfigBuilderError {
 		this.stack = innerError.stack
 	}
 
-	public static wrap<TResult>(fn: () => TResult): TResult {
+	public static wrap<TResult>(fn: () => TResult) {
 		try {
 			return fn()
 		} catch (err) {

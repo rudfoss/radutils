@@ -10,9 +10,9 @@ export class ConfigBuilderLifecycleError extends ConfigBuilderError {
 		this.stack = innerError.stack
 	}
 
-	public static wrap<TResult>(fn: () => TResult, lifecycle: LifecycleNames): TResult {
+	public static async wrap<TResult>(fn: () => TResult, lifecycle: LifecycleNames) {
 		try {
-			return fn()
+			return await fn()
 		} catch (err) {
 			throw new ConfigBuilderLifecycleError(err as Error, lifecycle)
 		}

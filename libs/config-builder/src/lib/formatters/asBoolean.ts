@@ -10,8 +10,7 @@ import { Formatter } from "../ConfigBuilderTypes"
  * All other types are coerced to a boolean value using `Boolean(value)`
  */
 export const asBoolean = (): Formatter<boolean> => (value) => {
-	if (typeof value !== "string") return Boolean(value)
 	if (value === "false") return false
 	if (value === "0") return false
-	return true
+	return Boolean(value)
 }

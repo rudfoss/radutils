@@ -9,9 +9,9 @@ export class ConfigBuilderBuildFunctionError extends ConfigBuilderError {
 		this.stack = innerError.stack
 	}
 
-	public static wrap<TResult>(fn: () => TResult): TResult {
+	public static async wrap<TResult>(fn: () => TResult) {
 		try {
-			return fn()
+			return await fn()
 		} catch (err) {
 			throw new ConfigBuilderBuildFunctionError(err as Error)
 		}

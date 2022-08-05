@@ -10,7 +10,8 @@
 				"outputPath": "dist/libs/config-builder",
 				"main": "libs/config-builder/src/index.ts",
 				"tsConfig": "libs/config-builder/tsconfig.lib.json",
-				"assets": ["libs/config-builder/*.md"]
+				"assets": ["libs/config-builder/*.md"],
+				"buildableProjectDepsInPackageJsonType": "dependencies"
 			}
 		},
 		"publish": {
@@ -37,7 +38,8 @@
 			"outputs": ["coverage/libs/config-builder"],
 			"options": {
 				"jestConfig": "libs/config-builder/jest.config.ts",
-				"passWithNoTests": true
+				"passWithNoTests": true,
+				"codeCoverage": true
 			}
 		}
 	},
