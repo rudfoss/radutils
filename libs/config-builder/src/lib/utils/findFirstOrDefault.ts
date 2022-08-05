@@ -6,11 +6,27 @@
  * @returns
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const findFirstOrDefault = (keys: Iterable<string>, inKeyValues: Map<string, unknown>, defaultValue?: any) => {
-	for (const key of keys) {
-		if (inKeyValues.has(key)) {
-			const value = inKeyValues.get(key)
-			if (value !== undefined) return value
+export const findFirstOrDefault = <TValue = unknown>(
+	keys: Iterable<string>,
+	inKeyValues: Map<string, TValue> | Record<string, TValue>,
+	defaultValue?: TValue
+) => {
+	if (inKeyValues instanceof Map) {
+		for (const key of keys) {
+			if (inKeyValues.has(key)) {
+				const value = inKeyValues.get(key)
+				if (value !== undefined) return value
+			}
+		}
+	}
+
+	// TODO: Make type inferrence work in this case so that instanceof can be removed.
+	if (!(inKeyValues instanceof Map)) {
+		for (const key of keys) {
+			if (Object.hasOwn(inKeyValues, key)) {
+				const value = inKeyValues[key]
+				if (value !== undefined) return value
+			}
 		}
 	}
 

@@ -73,24 +73,67 @@ describe("ConfigBuilder", () => {
 
 	it("is defined", () => {
 		expect(ConfigBuilder).toBeDefined()
+		expect(ConfigBuilder.name).toBe("ConfigBuilder")
 	})
 
-	it("resolves basic config keys", async () => {
+	it("clones constructor arguments internally", () => {
+		// This is done to prevent unsupported tampering
+		const sources = [mockSource] as const
+		builder = new ConfigBuilder(sources)
+		expect(builder["sources"]).not.toBe(sources)
+	})
+	it("throws if constructor is called with empty array of sources", () => {
+		expect(() => new ConfigBuilder([] as any)).toThrow(new ConfigBuilderError("Must provide at least one source"))
+	})
+
+	it("resolves config keys", async () => {
 		const config = await builder.build((req) => ({
-			hello: req("foo"),
-			world: req("bar"),
-			sub: {
-				object: req<{ foo: boolean; bar: boolean }>("object"),
-				json: req("json", asJson<{ foo: boolean; bar: boolean }>())
-			}
+			foo: req("foo"),
+			bar: req("bar"),
+			numeric: req("numeric"),
+			bool: req("bool"),
+			stringBool: req("stringBool"),
+			stringBoolFalse: req("stringBoolFalse"),
+			numBool: req("numBool"),
+			numBoolFalse: req("numBoolFalse"),
+			json: req("json"),
+			object: req("object"),
+			arr: req("arr")
 		}))
 
-		expect(config).toEqual({
-			hello: "foo",
-			world: "bar",
-			sub: {
-				object: { foo: true, bar: false },
-				json: { foo: true, bar: false }
+		expect(config).toEqual(MockConfigSource.configData)
+	})
+
+	it("supports defining complex object structures", async () => {
+		await expect(
+			builder.build((req) => ({
+				foo: req("foo"),
+				arr: [req("bar"), req("bool"), req("numeric")],
+				deep: {
+					struct: {
+						with: {
+							stuff: {
+								bool: req("bool"),
+								arr: req("arr")
+							},
+							list: [req("numBool")]
+						}
+					}
+				}
+			}))
+		).resolves.toEqual({
+			foo: "foo",
+			arr: ["bar", true, 42],
+			deep: {
+				struct: {
+					with: {
+						stuff: {
+							bool: true,
+							arr: ["a", "b", 3, "c"]
+						},
+						list: ["1"]
+					}
+				}
 			}
 		})
 	})

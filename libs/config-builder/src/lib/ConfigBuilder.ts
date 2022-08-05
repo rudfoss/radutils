@@ -33,17 +33,22 @@ interface LifecycleListener<T> {
  */
 export class ConfigBuilder {
 	protected lifecycleListeners = {
-		onBuildStart: new Set<LifecycleListener<ConfigSource["onBuildStart"]>>(),
-		onBuildSuccess: new Set<LifecycleListener<ConfigSource["onBuildSuccess"]>>(),
-		onBuildError: new Set<LifecycleListener<ConfigSource["onBuildError"]>>(),
-		onBuildSettled: new Set<LifecycleListener<ConfigSource["onBuildSettled"]>>()
+		onBuildStart: new Set<LifecycleListener<Required<ConfigSource>["onBuildStart"]>>(),
+		onBuildSuccess: new Set<LifecycleListener<Required<ConfigSource>["onBuildSuccess"]>>(),
+		onBuildError: new Set<LifecycleListener<Required<ConfigSource>["onBuildError"]>>(),
+		onBuildSettled: new Set<LifecycleListener<Required<ConfigSource>["onBuildSettled"]>>()
 	}
 
 	/**
 	 * Create a new `ConfigBuilder` instance with at least one config source.
 	 * @param sources
 	 */
-	constructor(protected readonly sources: [ConfigSource, ...ConfigSource[]]) {
+	constructor(protected readonly sources: readonly [ConfigSource, ...ConfigSource[]]) {
+		if (sources.length === 0) {
+			throw new ConfigBuilderError("Must provide at least one source")
+		}
+
+		this.sources = sources.slice(0) as [ConfigSource, ...ConfigSource[]]
 		for (const source of sources) {
 			if (source.onBuildStart) {
 				this.lifecycleListeners.onBuildStart.add({ fn: source.onBuildStart, self: source })
@@ -63,28 +68,28 @@ export class ConfigBuilder {
 	protected async runOnBuildStart(requiredKeys: ReadonlySet<string>, optionalKeys: ReadonlySet<string>) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildStart) {
-				await fn?.call(self, requiredKeys, optionalKeys)
+				await fn.call(self, requiredKeys, optionalKeys)
 			}
 		}, "onBuildStart")
 	}
 	protected async runOnBuildSuccess<TConfig>(config: TConfig) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildSuccess) {
-				await fn?.call(self, config)
+				await fn.call(self, config)
 			}
 		}, "onBuildSuccess")
 	}
 	protected async runOnBuildError(error: ConfigBuilderError) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildError) {
-				await fn?.call(self, error)
+				await fn.call(self, error)
 			}
 		}, "onBuildError")
 	}
 	protected async runOnBuildSettled<TConfig>(config?: TConfig, error?: ConfigBuilderError) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildSettled) {
-				await fn?.call(self, { config, error })
+				await fn.call(self, { config, error })
 			}
 		}, "onBuildSettled")
 	}
@@ -94,7 +99,7 @@ export class ConfigBuilder {
 		for (const key of keys) {
 			for (let i = 0; i < this.sources.length; i++) {
 				const source = this.sources[i]
-				const value = await ConfigBuilderResolveValueError.wrap(() => source.get(key), key, i, source.constructor?.name)
+				const value = await ConfigBuilderResolveValueError.wrap(() => source.get(key), key, i, source.constructor.name)
 				if (value !== undefined) {
 					keyValues.set(key, value)
 					break // Do not look in other sources
