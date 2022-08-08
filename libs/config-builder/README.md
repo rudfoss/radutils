@@ -25,3 +25,4 @@ There are several configuration sources available for the library already.
 Name|Description
 -|-
 [EnvConfigSource](./src/sources/EnvConfigSource)|Loads configurations from environment variables.
+[JSONConfigSource](./src/sources/JSONConfigSource)|Loads configurations from a static json object or using an asynchronous getter function.

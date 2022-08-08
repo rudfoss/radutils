@@ -6,6 +6,7 @@ This is a configuration source for the [ConfigBuilder](../../..). It adds suppor
 
 ```typescript
 import { ConfigBuilder, configSources } from "@radutils/config-builder"
+const { EnvConfigSource } = configSources
 
 const start = async () => {
 	// Create new instance of the source with default options

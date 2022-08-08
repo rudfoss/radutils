@@ -22,9 +22,9 @@ Utils:
 		✔ Documentation @done(22-08-08 07:26)
 	Config Loader JSON:
 		Load from JSON file or static JSON object
-		☐ JSON Loader
-		☐ Tests
-		☐ Documentation
+		✔ JSON Loader @done(22-08-08 09:29)
+		✔ Tests @done(22-08-08 09:29)
+		✔ Documentation @done(22-08-08 09:37)
 	Config Loader .rc:
 		Load from .rc and .rc compatible sources (low-priority)
 		☐ .rc Loader
