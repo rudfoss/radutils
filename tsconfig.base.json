@@ -15,7 +15,8 @@
 		"skipDefaultLibCheck": true,
 		"baseUrl": ".",
 		"paths": {
-			"@radutils/config-builder": ["libs/config-builder/src/index.ts"]
+			"@radutils/config-builder": ["libs/config-builder/src/index.ts"],
+			"@radutils/config-builder/*": ["libs/config-builder/src/*"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]

@@ -2,5 +2,21 @@
 	"name": "@radutils/config-builder",
 	"version": "0.0.1",
 	"type": "commonjs",
-	"sideEffects": false
+	"private": false,
+	"description": "Compile strongly typed configuration objects form multiple sources",
+	"sideEffects": false,
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/rudfoss/radutils.git"
+	},
+	"bugs": {
+		"url": "https://github.com/rudfoss/radutils/issues"
+	},
+	"homepage": "https://github.com/rudfoss/radutils",
+	"author": "Thomas Haugland Rudfoss",
+	"keywords": [
+		"config",
+		"typescript"
+	]
 }
