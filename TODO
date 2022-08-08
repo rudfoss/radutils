@@ -9,7 +9,7 @@ Utils:
 			☐ Basic usage
 			☐ Isolated buildFn with extracted type
 		☐ Examples
-	Config Loader Azure:
+	Config Loader Azure (must be separate library):
 		Azure App Configuration and/or Azure Key Vault
 		☐ App Configuration support
 		☐ Content type resolver support
@@ -19,7 +19,7 @@ Utils:
 		Load from ENV variables
 		✔ ENV Loader @done(22-08-05 14:06)
 		✔ Tests @done(22-08-05 14:06)
-		☐ Documentation
+		✔ Documentation @done(22-08-08 07:26)
 	Config Loader JSON:
 		Load from JSON file or static JSON object
 		☐ JSON Loader

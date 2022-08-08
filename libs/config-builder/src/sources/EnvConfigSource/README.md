@@ -1,6 +1,6 @@
 # EnvConfigSource
 
-This is a configuration source for the [ConfigBuilder](../../..) library. It adds support for reading configuration data from environment variables.
+This is a configuration source for the [ConfigBuilder](../../..). It adds support for reading configuration data from environment variables.
 
 ## Usage
 

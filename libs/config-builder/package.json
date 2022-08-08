@@ -13,7 +13,7 @@
 	"bugs": {
 		"url": "https://github.com/rudfoss/radutils/issues"
 	},
-	"homepage": "https://github.com/rudfoss/radutils",
+	"homepage": "https://github.com/rudfoss/radutils/libs/config-builder",
 	"author": "Thomas Haugland Rudfoss",
 	"keywords": [
 		"config",

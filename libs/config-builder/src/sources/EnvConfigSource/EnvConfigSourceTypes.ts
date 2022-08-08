@@ -3,6 +3,9 @@
  */
 export type KeyTransform = (key: string) => string | string[]
 
+/**
+ * This interface describes the options for `EnvConfigSource`. When no options object is defined the default values are used.
+ */
 export interface EnvConfigSourceOptions {
 	/**
 	 * Specify an optional key transform function to handle keys that may not directly map to environment variables.
