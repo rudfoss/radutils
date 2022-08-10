@@ -45,4 +45,8 @@ export class JSONConfigSource implements ConfigSource {
 
 		return this.options.lookup(this.objRef, key) as TValue
 	}
+
+	public clone() {
+		return new JSONConfigSource(this.options)
+	}
 }

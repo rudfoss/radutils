@@ -36,6 +36,15 @@ export class EnvConfigSource implements ConfigSource {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const env: Record<string, TValue> = (this.envCache ?? process.env) as any
 
-		return findFirstOrDefault<TValue>(Array.isArray(keysToTry) ? keysToTry : [keysToTry], env)
+		return findFirstOrDefault<TValue>(Array.isArray(keysToTry) ? keysToTry : [keysToTry], env).value
+	}
+
+	public clone() {
+		const newInstance = new EnvConfigSource(this.options)
+		if (this.options.cacheMode === "perInstance") {
+			newInstance.envCache = this.envCache
+		}
+
+		return newInstance
 	}
 }

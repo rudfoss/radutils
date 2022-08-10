@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ConfigBuilder } from "./ConfigBuilder"
-import { ConfigSource } from "./ConfigBuilderTypes"
+import { BuildRunContext, ConfigSource, OptionalConfig, RequiredConfig } from "./ConfigBuilderTypes"
 import {
 	ConfigBuilderBuildFunctionError,
 	ConfigBuilderError,
@@ -12,13 +12,30 @@ import {
 import { asJson } from "./formatters"
 
 class MockConfigSource implements ConfigSource {
-	public onBuildStart?: (requiredKeys: ReadonlySet<string>, optionalKeys: ReadonlySet<string>) => void | Promise<void>
-	public onBuildSuccess?: <TConfig = unknown>(config: TConfig) => void | Promise<void>
-	public onBuildError?: (error: ConfigBuilderError) => void | Promise<void>
-	public onBuildSettled?: <TConfig = unknown>(result: {
-		error?: ConfigBuilderError | undefined
-		config?: TConfig | undefined
-	}) => void | Promise<void>
+	public onBuildStart?:
+		| ((options: {
+				requiredKeys: ReadonlySet<string>
+				optionalKeys: ReadonlySet<string>
+				context: BuildRunContext
+		  }) => void | Promise<void>)
+		| undefined
+	public onBuildSuccess?:
+		| (<TConfig = unknown>(result: {
+				config: TConfig
+				keyValues: ReadonlyMap<string, unknown>
+				context: BuildRunContext
+		  }) => void | Promise<void>)
+		| undefined
+	public onBuildError?:
+		| ((options: { error: ConfigBuilderError; context: BuildRunContext }) => void | Promise<void>)
+		| undefined
+	public onBuildSettled?:
+		| (<TConfig = unknown>(result: {
+				error?: ConfigBuilderError | undefined
+				config?: TConfig | undefined
+				context: BuildRunContext
+		  }) => void | Promise<void>)
+		| undefined
 
 	constructor(public data: Record<string, unknown>) {
 		this.onBuildStart = jest.fn()
@@ -30,6 +47,19 @@ class MockConfigSource implements ConfigSource {
 
 	public async get<TValue>(key: string) {
 		return this.data[key] as TValue
+	}
+
+	public clone() {
+		const inst = new MockConfigSource(this.data)
+
+		// Keep mocks when cloning so that references are where they are expected.
+		inst.onBuildStart = this.onBuildStart
+		inst.onBuildSuccess = this.onBuildSuccess
+		inst.onBuildError = this.onBuildError
+		inst.onBuildSettled = this.onBuildSettled
+		inst.get = this.get
+
+		return inst
 	}
 
 	public static readonly configData = {
@@ -54,20 +84,8 @@ describe("ConfigBuilder", () => {
 	let mockSource: MockConfigSource
 	let builder: ConfigBuilder
 
-	let mockOnBuildStart: jest.Mock
-	let mockOnBuildSuccess: jest.Mock
-	let mockOnBuildError: jest.Mock
-	let mockOnBuildSettled: jest.Mock
-	let mockGet: jest.Mock
-
 	beforeEach(() => {
 		mockSource = MockConfigSource.fromTestData()
-		mockOnBuildStart = mockSource.onBuildStart as any
-		mockOnBuildSuccess = mockSource.onBuildSuccess as any
-		mockOnBuildError = mockSource.onBuildError as any
-		mockOnBuildSettled = mockSource.onBuildSettled as any
-		mockGet = mockSource.get as any
-
 		builder = new ConfigBuilder([mockSource])
 	})
 
@@ -148,6 +166,7 @@ describe("ConfigBuilder", () => {
 			}
 		}))
 
+		const mockGet: jest.Mock = mockSource["get"] as any
 		expect(mockGet.mock.calls.length).toBe(4)
 		expect(mockGet.mock.calls[0][0]).toBe("foo")
 		expect(mockGet.mock.calls[1][0]).toBe("bar")
@@ -226,11 +245,11 @@ describe("ConfigBuilder", () => {
 	})
 
 	it("does not call functions events until build runs", () => {
-		expect(mockOnBuildStart).not.toHaveBeenCalled()
-		expect(mockOnBuildSuccess).not.toHaveBeenCalled()
-		expect(mockOnBuildError).not.toHaveBeenCalled()
-		expect(mockOnBuildSettled).not.toHaveBeenCalled()
-		expect(mockGet).not.toHaveBeenCalled()
+		expect(mockSource["onBuildStart"]).not.toHaveBeenCalled()
+		expect(mockSource["onBuildSuccess"]).not.toHaveBeenCalled()
+		expect(mockSource["onBuildError"]).not.toHaveBeenCalled()
+		expect(mockSource["onBuildSettled"]).not.toHaveBeenCalled()
+		expect(mockSource["get"]).not.toHaveBeenCalled()
 	})
 
 	it("throws buildFunction error if build function throws", async () => {
@@ -242,23 +261,26 @@ describe("ConfigBuilder", () => {
 	})
 
 	it("supports non-class config sources", async () => {
+		const mockGet: jest.Mock = jest.fn(async () => "hey")
 		const mockObjSource: ConfigSource = {
-			get: jest.fn(async () => "hey") as any
+			get: mockGet as any,
+			clone: () => ({ ...mockObjSource })
 		}
-		mockGet = mockObjSource.get as any
 		builder = new ConfigBuilder([mockObjSource])
 
 		await builder.build((req) => ({ test: req("boink") }))
+
 		expect(mockGet).toHaveBeenCalled()
 		expect(mockGet.mock.calls[0][0]).toBe("boink")
 	})
 	it("properly wraps errors from getters in non-class config sources", async () => {
+		const mockGet = jest.fn(async () => {
+			throw new Error("test resolve error")
+		})
 		const mockObjSource: ConfigSource = {
-			get: jest.fn(async () => {
-				throw new Error("test resolve error")
-			}) as any
+			get: mockGet as any,
+			clone: () => ({ ...mockObjSource })
 		}
-		mockGet = mockObjSource.get as any
 		builder = new ConfigBuilder([mockObjSource])
 
 		await expect(() => builder.build((req) => ({ test: req("boink") }))).rejects.toThrow(
@@ -268,18 +290,25 @@ describe("ConfigBuilder", () => {
 
 	describe("Lifecycle.onBuildStart", () => {
 		it("is called with expected keys", async () => {
-			await builder.build((req, opt) => ({
+			const buildFn = (req: RequiredConfig, opt: OptionalConfig) => ({
 				foo: req("foo"),
 				bar: req("bar"),
 				test: opt("numeric"),
 				alsoTest: opt("arr")
-			}))
+			})
+			await builder.build(buildFn)
 
+			const mockOnBuildStart: jest.Mock = mockSource["onBuildStart"] as any
 			expect(mockOnBuildStart.mock.calls.length).toBe(1)
-			expect(mockOnBuildStart.mock.calls[0][0]).toEqual(new Set(["foo", "bar"]))
-			expect(mockOnBuildStart.mock.calls[0][1]).toEqual(new Set(["numeric", "arr"]))
+			expect(mockOnBuildStart.mock.calls[0][0].requiredKeys).toEqual(new Set(["foo", "bar"]))
+			expect(mockOnBuildStart.mock.calls[0][0].optionalKeys).toEqual(new Set(["numeric", "arr"]))
+			expect(mockOnBuildStart.mock.calls[0][0].context.buildFnRef).toBe(buildFn)
+			expect(mockOnBuildStart.mock.calls[0][0].context).toEqual({
+				buildFnRef: buildFn,
+				context: {}
+			})
 		})
-		it("waits to resolve keys until onBuildStart has completed", async () => {
+		it("waits to resolve keys until onBuildStart has succeeded", async () => {
 			mockSource.onBuildStart = jest.fn(() => {
 				throw new Error("oops")
 			})
@@ -295,11 +324,25 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow(thrownError)
 
-			expect(mockOnBuildSuccess).not.toHaveBeenCalled()
-			expect(mockGet).not.toHaveBeenCalled()
+			expect(mockSource.onBuildStart).toHaveBeenCalled()
+			expect(mockSource.get).not.toHaveBeenCalled()
+		})
+		it("shares context object with build fn call", async () => {
+			const ctx = { foo: true }
+
+			const buildFn = (req: RequiredConfig, opt: OptionalConfig) => ({
+				foo: req("foo"),
+				bar: req("bar"),
+				test: opt("numeric"),
+				alsoTest: opt("arr")
+			})
+			await builder.build(buildFn, ctx)
+
+			const mockOnBuildStart: jest.Mock = mockSource["onBuildStart"] as any
+			expect(mockOnBuildStart.mock.calls[0][0].context.context).toBe(ctx)
 		})
 		it("throws lifecycle error if function throws", async () => {
-			mockSource.onBuildStart = mockOnBuildStart = jest.fn(() => {
+			mockSource.onBuildStart = jest.fn(() => {
 				throw new Error("onBuildStart")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -319,10 +362,10 @@ describe("ConfigBuilder", () => {
 				alsoTest: opt("arr")
 			}))
 
-			const mockFn: jest.Mock = mockSource.onBuildSuccess as any
-			expect(mockFn).toHaveBeenCalled()
-			expect(mockFn.mock.calls.length).toBe(1)
-			expect(mockFn.mock.calls[0][0]).toBe(config)
+			const mockOnBuildSuccess: jest.Mock = mockSource.onBuildSuccess as any
+			expect(mockOnBuildSuccess).toHaveBeenCalled()
+			expect(mockOnBuildSuccess.mock.calls.length).toBe(1)
+			expect(mockOnBuildSuccess.mock.calls[0][0].config).toBe(config)
 		})
 		it("is not called if an error occurs before success", async () => {
 			mockSource.onBuildStart = jest.fn(() => {
@@ -339,8 +382,22 @@ describe("ConfigBuilder", () => {
 			const mockOnBuildSuccess: jest.Mock = mockSource.onBuildSuccess as any
 			expect(mockOnBuildSuccess).not.toHaveBeenCalled()
 		})
+		it("shares context object with build fn call", async () => {
+			const ctx = { foo: true }
+
+			const buildFn = (req: RequiredConfig, opt: OptionalConfig) => ({
+				foo: req("foo"),
+				bar: req("bar"),
+				test: opt("numeric"),
+				alsoTest: opt("arr")
+			})
+			await builder.build(buildFn, ctx)
+
+			const mockOnBuildSuccess: jest.Mock = mockSource.onBuildSuccess as any
+			expect(mockOnBuildSuccess.mock.calls[0][0].context.context).toBe(ctx)
+		})
 		it("throws lifecycle error if function throws", async () => {
-			mockSource.onBuildSuccess = mockOnBuildSuccess = jest.fn(() => {
+			mockSource.onBuildSuccess = jest.fn(() => {
 				throw new Error("onBuildSuccess")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -349,11 +406,34 @@ describe("ConfigBuilder", () => {
 				new ConfigBuilderLifecycleError(new Error("onBuildSuccess"), "onBuildSuccess")
 			)
 		})
+		it("recieves a complete set of all resolved keys and their values", async () => {
+			expect(mockSource.onBuildSuccess).not.toHaveBeenCalled()
+
+			await builder.build((req, opt) => ({
+				foo: req("foo"),
+				bar: req("bar"),
+				test: opt("numeric"),
+				alsoTest: opt("arr")
+			}))
+			const expectedMap = new Map<string, unknown>()
+			expectedMap.set("foo", MockConfigSource.configData.foo)
+			expectedMap.set("bar", MockConfigSource.configData.bar)
+			expectedMap.set("numeric", MockConfigSource.configData.numeric)
+			expectedMap.set("arr", MockConfigSource.configData.arr)
+
+			const mockOnBuildSuccess: jest.Mock = mockSource.onBuildSuccess as any
+			expect(mockOnBuildSuccess).toHaveBeenCalled()
+			expect(mockOnBuildSuccess.mock.calls.length).toBe(1)
+			expect(mockOnBuildSuccess.mock.calls[0][0].keyValues).toBeDefined()
+
+			const keyValues = mockOnBuildSuccess.mock.calls[0][0].keyValues
+			expect(keyValues).toEqual(expectedMap)
+		})
 	})
 
 	describe("Lifecycle.onBuildError", () => {
 		it("is called if build start function throws", async () => {
-			mockSource.onBuildStart = mockOnBuildStart = jest.fn(() => {
+			mockSource.onBuildStart = jest.fn(() => {
 				throw new Error("oops")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -364,17 +444,39 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
-			expect(mockOnBuildStart).toHaveBeenCalled()
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
+			expect(mockSource.onBuildStart).toHaveBeenCalled()
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(
 				new ConfigBuilderLifecycleError(
 					new ConfigBuilderLifecycleError(new Error("oops"), "onBuildStart"),
 					"onBuildError"
 				)
 			)
 		})
+		it("shares context object with build fn call", async () => {
+			const ctx = { foo: true }
+
+			mockSource.onBuildStart = jest.fn(() => {
+				throw new Error("oops")
+			})
+			builder = new ConfigBuilder([mockSource])
+
+			await expect(() =>
+				builder.build(
+					(req) => ({
+						test: req("foo")
+					}),
+					ctx
+				)
+			).rejects.toThrow()
+
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
+			expect(mockOnBuildError).toHaveBeenCalled()
+			expect(mockOnBuildError.mock.calls[0][0].context.context).toBe(ctx)
+		})
 		it("is called if getter throws", async () => {
-			mockSource.get = mockGet = jest.fn(() => {
+			mockSource.get = jest.fn(() => {
 				throw new Error("oops")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -385,9 +487,10 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
-			expect(mockGet).toHaveBeenCalled()
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
+			expect(mockSource.get).toHaveBeenCalled()
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(
 				new ConfigBuilderLifecycleError(
 					new ConfigBuilderResolveValueError(new Error("oops"), "foo", 0, "MockConfigSource"),
 					"onBuildError"
@@ -401,8 +504,9 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(
 				new ConfigBuilderLifecycleError(new ConfigBuilderMissingRequiredKeysError(["foo2"]), "onBuildError")
 			)
 		})
@@ -415,11 +519,13 @@ describe("ConfigBuilder", () => {
 					})
 				}))
 			).rejects.toThrow(expectedError)
+
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(expectedError)
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(expectedError)
 		})
 		it("is NOT called if onBuildSuccess throws", async () => {
-			mockSource.onBuildSuccess = mockOnBuildSuccess = jest.fn(() => {
+			mockSource.onBuildSuccess = jest.fn(() => {
 				throw new Error("oops")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -430,13 +536,13 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
-			expect(mockOnBuildError).not.toHaveBeenCalled()
+			expect(mockSource.onBuildError).not.toHaveBeenCalled()
 		})
 		it("throws lifecycle error if function throws", async () => {
-			mockSource.get = mockGet = jest.fn(() => {
+			mockSource.get = jest.fn(() => {
 				throw new Error("mockGet")
 			})
-			mockSource.onBuildError = mockOnBuildError = jest.fn(() => {
+			mockSource.onBuildError = jest.fn(() => {
 				throw new Error("onBuildError")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -444,16 +550,36 @@ describe("ConfigBuilder", () => {
 			await expect(() => builder.build((req) => ({ test: req("foo") }))).rejects.toThrow(
 				new ConfigBuilderLifecycleError(new Error("onBuildError"), "onBuildError")
 			)
+
+			const mockOnBuildError = mockSource.onBuildError as any
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(
 				new ConfigBuilderResolveValueError(new Error("mockGet"), "foo", 0, "MockConfigSource")
 			)
 		})
 	})
 
 	describe("Lifecycle.onBuildSettled", () => {
+		it("is called if build successfull", async () => {
+			const ctx = { foo: true }
+			const config = await builder.build(
+				(req, opt) => ({
+					foo: req("foo"),
+					bar: req("bar"),
+					test: opt("numeric"),
+					alsoTest: opt("arr")
+				}),
+				ctx
+			)
+
+			const mockOnBuildSettled: jest.Mock = mockSource.onBuildSettled as any
+			expect(mockOnBuildSettled).toHaveBeenCalled()
+			expect(mockOnBuildSettled.mock.calls.length).toBe(1)
+			expect(mockOnBuildSettled.mock.calls[0][0].config).toBe(config)
+			expect(mockOnBuildSettled.mock.calls[0][0].context.context).toBe(ctx)
+		})
 		it("is called if build start function throws", async () => {
-			mockSource.onBuildStart = mockOnBuildStart = jest.fn(() => {
+			mockSource.onBuildStart = jest.fn(() => {
 				throw new Error("oops")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -464,7 +590,8 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
-			expect(mockOnBuildStart).toHaveBeenCalled()
+			const mockOnBuildSettled: jest.Mock = mockSource.onBuildSettled as any
+			expect(mockSource.onBuildStart).toHaveBeenCalled()
 			expect(mockOnBuildSettled).toHaveBeenCalled()
 			expect(mockOnBuildSettled.mock.calls[0][0]?.error).toEqual(
 				new ConfigBuilderLifecycleError(
@@ -473,8 +600,29 @@ describe("ConfigBuilder", () => {
 				)
 			)
 		})
+		it("shares context object with build fn call", async () => {
+			const ctx = { foo: true }
+
+			mockSource.onBuildStart = jest.fn(() => {
+				throw new Error("oops")
+			})
+			builder = new ConfigBuilder([mockSource])
+
+			await expect(() =>
+				builder.build(
+					(req) => ({
+						test: req("foo")
+					}),
+					ctx
+				)
+			).rejects.toThrow()
+
+			const mockOnBuildSettled: jest.Mock = mockSource.onBuildSettled as any
+			expect(mockOnBuildSettled).toHaveBeenCalled()
+			expect(mockOnBuildSettled.mock.calls[0][0].context.context).toBe(ctx)
+		})
 		it("is called if getter throws", async () => {
-			mockSource.get = mockGet = jest.fn(() => {
+			mockSource.get = jest.fn(() => {
 				throw new Error("oops")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -485,9 +633,10 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
-			expect(mockGet).toHaveBeenCalled()
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
+			expect(mockSource.get).toHaveBeenCalled()
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(
 				new ConfigBuilderLifecycleError(
 					new ConfigBuilderResolveValueError(new Error("oops"), "foo", 0, "MockConfigSource"),
 					"onBuildError"
@@ -501,13 +650,14 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
 			expect(mockOnBuildError).toHaveBeenCalled()
-			expect(mockOnBuildError.mock.calls[0][0]).toEqual(
+			expect(mockOnBuildError.mock.calls[0][0].error).toEqual(
 				new ConfigBuilderLifecycleError(new ConfigBuilderMissingRequiredKeysError(["foo2"]), "onBuildError")
 			)
 		})
 		it("is NOT called if onBuildSuccess throws", async () => {
-			mockSource.onBuildSuccess = mockOnBuildSuccess = jest.fn(() => {
+			mockSource.onBuildSuccess = jest.fn(() => {
 				throw new Error("oops")
 			})
 			builder = new ConfigBuilder([mockSource])
@@ -518,10 +668,11 @@ describe("ConfigBuilder", () => {
 				}))
 			).rejects.toThrow()
 
+			const mockOnBuildError: jest.Mock = mockSource.onBuildError as any
 			expect(mockOnBuildError).not.toHaveBeenCalled()
 		})
 		it("throws lifecycle error if function throws", async () => {
-			mockSource.onBuildSettled = mockOnBuildSettled = jest.fn(() => {
+			mockSource.onBuildSettled = jest.fn(() => {
 				throw new Error("onBuildSettled")
 			})
 			builder = new ConfigBuilder([mockSource])

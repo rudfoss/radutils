@@ -1,7 +1,7 @@
 // Import what we need to get started
-import { ConfigBuilder, formatters, configSources } from "@radutils/config-builder"
-const { asList } = formatters
-const { EnvConfigSource } = configSources
+import { ConfigBuilder } from "@radutils/config-builder"
+import { EnvConfigSource } from "@radutils/config-builder/sources"
+import { asList } from "@radutils/config-builder/formatters"
 
 // Create an async function where we can build our configuration
 const start = async () => {
@@ -12,6 +12,7 @@ const start = async () => {
 	// Create our configuration using a build function passed to the builder
 	const config = await builder.build((req, opt) => {
 		return {
+			// This value is required so we define it using "req". If the value is not found the builder will throw an error.
 			nodeEnv: req("NODE_ENV"),
 
 			//EnvConfigSource will normalize this name for us

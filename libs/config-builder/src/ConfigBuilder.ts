@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { BuildFunction, ConfigSource, Formatter, OptionalConfig, RequiredConfig } from "./ConfigBuilderTypes"
+import type {
+	BuildFunction,
+	BuildRunContext,
+	ConfigSource,
+	Formatter,
+	OptionalConfig,
+	RequiredConfig
+} from "./ConfigBuilderTypes"
 import {
 	ConfigBuilderBuildFunctionError,
 	ConfigBuilderError,
@@ -65,31 +72,39 @@ export class ConfigBuilder {
 		}
 	}
 
-	protected async runOnBuildStart(requiredKeys: ReadonlySet<string>, optionalKeys: ReadonlySet<string>) {
+	protected async runOnBuildStart(
+		requiredKeys: ReadonlySet<string>,
+		optionalKeys: ReadonlySet<string>,
+		context: BuildRunContext
+	) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildStart) {
-				await fn.call(self, requiredKeys, optionalKeys)
+				await fn.call(self, { requiredKeys, optionalKeys, context })
 			}
 		}, "onBuildStart")
 	}
-	protected async runOnBuildSuccess<TConfig>(config: TConfig) {
+	protected async runOnBuildSuccess<TConfig>(
+		config: TConfig,
+		resolvedKeyValues: Map<string, unknown>,
+		context: BuildRunContext
+	) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildSuccess) {
-				await fn.call(self, config)
+				await fn.call(self, { config, keyValues: resolvedKeyValues, context })
 			}
 		}, "onBuildSuccess")
 	}
-	protected async runOnBuildError(error: ConfigBuilderError) {
+	protected async runOnBuildError(error: ConfigBuilderError, context: BuildRunContext) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildError) {
-				await fn.call(self, error)
+				await fn.call(self, { error, context })
 			}
 		}, "onBuildError")
 	}
-	protected async runOnBuildSettled<TConfig>(config?: TConfig, error?: ConfigBuilderError) {
+	protected async runOnBuildSettled<TConfig>(context: BuildRunContext, config?: TConfig, error?: ConfigBuilderError) {
 		return ConfigBuilderLifecycleError.wrap(async () => {
 			for (const { fn, self } of this.lifecycleListeners.onBuildSettled) {
-				await fn.call(self, { config, error })
+				await fn.call(self, { config, error, context })
 			}
 		}, "onBuildSettled")
 	}
@@ -112,13 +127,14 @@ export class ConfigBuilder {
 	protected replaceConfigPlaceholders(
 		configWithPlaceholders: Record<string, any>,
 		keyValues: Map<string, unknown>,
-		missingRequiredKeys: Set<string>
+		missingRequiredKeys: Set<string>,
+		resolvedKeyValues: Map<string, unknown>
 	) {
 		// Handle case where value is an array. Since property and index accessors work the same this also works.
 		const configObject: any = Array.isArray(configWithPlaceholders) ? [] : {}
 		for (const [key, value] of Object.entries(configWithPlaceholders)) {
 			if (isPlaceholder(value)) {
-				const configValue = findFirstOrDefault(value.keys, keyValues, value.defaultValue)
+				const { value: configValue, key: usedKey } = findFirstOrDefault(value.keys, keyValues, value.defaultValue)
 				if (configValue === undefined && value.required) {
 					setMerger(missingRequiredKeys)([value.keys[0]])
 					continue
@@ -126,12 +142,20 @@ export class ConfigBuilder {
 				configObject[key] = ConfigBuilderFormatterError.wrap(() =>
 					value.formatter ? value.formatter(configValue) : configValue
 				)
+				if (usedKey) {
+					resolvedKeyValues.set(usedKey, configObject[key])
+				}
 				continue
 			}
 
 			// both actual objects AND arrays are of type "object". Therefore this will catch both.
 			if (typeof value === "object") {
-				configObject[key] = this.replaceConfigPlaceholders(value as any, keyValues, missingRequiredKeys)
+				configObject[key] = this.replaceConfigPlaceholders(
+					value as any,
+					keyValues,
+					missingRequiredKeys,
+					resolvedKeyValues
+				)
 				continue
 			}
 
@@ -140,16 +164,21 @@ export class ConfigBuilder {
 		return configObject
 	}
 
-	/**
-	 * Builds the configuration object defined by the `buildFn` provided.
-	 * @param buildFn
-	 */
-	public async build<TConfig>(buildFn: BuildFunction<TConfig>): Promise<TConfig> {
+	protected async buildSelf<TConfig>(
+		buildFn: BuildFunction<TConfig>,
+		context: Record<string, unknown> = {}
+	): Promise<TConfig> {
 		let finalConfig: TConfig | undefined = undefined
+		const resolvedKeyValues = new Map<string, unknown>()
 		let configBuilderError: ConfigBuilderError | undefined = undefined
 
 		const requiredKeys = setMerger<string>()
 		const optionalKeys = setMerger<string>()
+
+		const buildRunContext: BuildRunContext = {
+			buildFnRef: buildFn,
+			context
+		}
 
 		const required: RequiredConfig = (key, formatter) => {
 			const keys = Array.isArray(key) ? key : [key]
@@ -177,11 +206,16 @@ export class ConfigBuilder {
 			const configWithPlaceholders: Record<string, unknown> = (await ConfigBuilderBuildFunctionError.wrap(() =>
 				buildFn(required, optional)
 			)) as any
-			await this.runOnBuildStart(requiredKeys.set, optionalKeys.set)
+			await this.runOnBuildStart(requiredKeys.set, optionalKeys.set, buildRunContext)
 
 			const keyValues = await this.resolveConfigKeyValues(setMerger<string>()(requiredKeys.set)(optionalKeys.set).set)
 			const missingRequiredKeys = new Set<string>()
-			const config = this.replaceConfigPlaceholders(configWithPlaceholders, keyValues, missingRequiredKeys)
+			const config = this.replaceConfigPlaceholders(
+				configWithPlaceholders,
+				keyValues,
+				missingRequiredKeys,
+				resolvedKeyValues
+			)
 			finalConfig = config
 
 			if (missingRequiredKeys.size > 0) {
@@ -189,15 +223,32 @@ export class ConfigBuilder {
 			}
 		} catch (err) {
 			configBuilderError = err as any
-			await this.runOnBuildError(err as any)
+			await this.runOnBuildError(err as any, buildRunContext)
 			throw err
 		} finally {
-			await this.runOnBuildSettled(finalConfig, configBuilderError)
+			await this.runOnBuildSettled(buildRunContext, finalConfig, configBuilderError)
 		}
 
-		await this.runOnBuildSuccess(finalConfig)
+		await this.runOnBuildSuccess(finalConfig, resolvedKeyValues, buildRunContext)
 
 		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 		return finalConfig!
+	}
+
+	/**
+	 * Creates a new instance of the builder with new instances of each config source in the same order. This is done to ensure each build runs in isolation and that each source may change its own state interally without conflicting with other internal states.
+	 * @returns
+	 */
+	protected clone() {
+		return new ConfigBuilder(this.sources.map((source) => source.clone()) as [ConfigSource, ...ConfigSource[]])
+	}
+
+	/**
+	 * Builds the configuration object defined by the `buildFn` provided.
+	 * @param buildFn
+	 * @param context Optionally specify context data that is shared between all soruces during deployment.
+	 */
+	public async build<TConfig>(buildFn: BuildFunction<TConfig>, context?: Record<string, unknown>): Promise<TConfig> {
+		return this.clone().buildSelf(buildFn, context)
 	}
 }

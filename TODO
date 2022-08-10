@@ -5,8 +5,10 @@ Utils:
 		✔ Formatter support @done(22-08-05 11:23)
 		✔ Error handling @done(22-08-05 11:23)
 		✔ Tests @done(22-08-05 14:06)
-		☐ Documentation
-			☐ Basic usage
+		☐ Fix import/export paths in output
+			It should be possible to do `import {x} from "@radutils/config-builder/sources"`
+		☐ Documentation @started(22-08-08 10:26)
+			✔ Basic usage @done(22-08-08 10:26)
 			☐ Isolated buildFn with extracted type
 		☐ Examples
 	Config Loader Azure (must be separate library):
@@ -25,14 +27,14 @@ Utils:
 		✔ JSON Loader @done(22-08-08 09:29)
 		✔ Tests @done(22-08-08 09:29)
 		✔ Documentation @done(22-08-08 09:37)
-	Config Loader .rc:
-		Load from .rc and .rc compatible sources (low-priority)
-		☐ .rc Loader
-		☐ Tests
-		☐ Documentation
 	Config Loader Cached:
 		Cache config data locally as a file in `node_modules/.cache` for quick restarts.
 		☐ Cached data loader (returns cached version of the config data from disk after initial load)
+		☐ Tests
+		☐ Documentation
+	Config Loader .rc:
+		Load from .rc and .rc compatible sources (low-priority)
+		☐ .rc Loader
 		☐ Tests
 		☐ Documentation
 	Query manager (with caching, like DataQuery) *

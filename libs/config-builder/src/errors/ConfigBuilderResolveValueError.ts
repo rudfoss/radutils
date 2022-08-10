@@ -1,5 +1,8 @@
 import { ConfigBuilderError } from "./ConfigBuilderError"
 
+/**
+ * This error is thrown with an inner error if the `get` function of a data source throws.
+ */
 export class ConfigBuilderResolveValueError extends ConfigBuilderError {
 	constructor(
 		public innerError: Error,

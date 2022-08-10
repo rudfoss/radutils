@@ -40,6 +40,13 @@ describe("JSONConfigSource", () => {
 
 		expect(consoleWarnSpy).not.toHaveBeenCalled()
 	})
+	it("keeps options when cloned", () => {
+		const clonedEnvSource = mockSource.clone()
+		expect(clonedEnvSource).not.toBe(mockSource)
+		expect(clonedEnvSource["options"]).not.toBe(mockSource["options"])
+		expect(clonedEnvSource["options"]).toEqual(mockSource["options"])
+	})
+
 	it("it warns using console if both obj and get options are defined", () => {
 		new JSONConfigSource({ obj: {}, get: mockGetter } as any)
 		expect(consoleWarnSpy.mock.calls.length).toBe(1)

@@ -31,6 +31,12 @@ describe("EnvConfigSource", () => {
 		expect(envSource["options"].cacheMode).toBe("perBuild")
 		expect(envSource["options"].keyTransform).toBe(defaultKeyTransformer)
 	})
+	it("keeps options when cloned", () => {
+		const clonedEnvSource = envSource.clone()
+		expect(clonedEnvSource).not.toBe(envSource)
+		expect(clonedEnvSource["options"]).not.toBe(envSource["options"])
+		expect(clonedEnvSource["options"]).toEqual(envSource["options"])
+	})
 
 	it("returns env variable values with default key transforms applied", () => {
 		expect(envSource.get("ENV_CONFIG_TEST_A")).toEqual("Alpha")

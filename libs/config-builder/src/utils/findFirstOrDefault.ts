@@ -1,5 +1,5 @@
 /**
- * Returns the first non-undefined value from the map or the default value if no values are found.
+ * Returns the first non-undefined value from the map or the default value if no values are found as well as the key for that value.
  * @param keys
  * @param inKeyValues
  * @param defaultValue
@@ -10,12 +10,12 @@ export const findFirstOrDefault = <TValue = unknown>(
 	keys: Iterable<string>,
 	inKeyValues: Map<string, TValue> | Record<string, TValue>,
 	defaultValue?: TValue
-) => {
+): { value: TValue | undefined; key?: string } => {
 	if (inKeyValues instanceof Map) {
 		for (const key of keys) {
 			if (inKeyValues.has(key)) {
 				const value = inKeyValues.get(key)
-				if (value !== undefined) return value
+				if (value !== undefined) return { value, key }
 			}
 		}
 	}
@@ -25,10 +25,10 @@ export const findFirstOrDefault = <TValue = unknown>(
 		for (const key of keys) {
 			if (Object.hasOwn(inKeyValues, key)) {
 				const value = inKeyValues[key]
-				if (value !== undefined) return value
+				if (value !== undefined) return { value, key }
 			}
 		}
 	}
 
-	return defaultValue
+	return { value: defaultValue }
 }
