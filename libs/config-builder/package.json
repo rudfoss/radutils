@@ -1,6 +1,6 @@
 {
 	"name": "@radutils/config-builder",
-	"version": "0.0.3-beta.0",
+	"version": "0.0.3-beta.2",
 	"type": "commonjs",
 	"private": false,
 	"description": "Compile strongly typed configuration objects form multiple sources",
