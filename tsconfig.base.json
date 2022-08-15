@@ -1,0 +1,26 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"rootDir": ".",
+		"sourceMap": true,
+		"declaration": false,
+		"moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"importHelpers": true,
+		"target": "es2017",
+		"module": "esnext",
+		"lib": ["ES2022"],
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"downlevelIteration": true,
+		"strictNullChecks": true,
+		"esModuleInterop": true,
+		"baseUrl": ".",
+		"paths": {
+			"@radutils/config-builder": ["libs/config-builder/src/index.ts"],
+			"@radutils/config-builder/*": ["libs/config-builder/src/*"]
+		}
+	},
+	"exclude": ["node_modules", "tmp"]
+}
