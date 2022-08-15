@@ -71,7 +71,7 @@ const config = await builder.build((required, optional) => {
 
 ### Config sources
 
-The `ConfigBuilder` class uses **config sources** to resolve configuration keys defined in the **config builder functon**. When you create a new instance you also specify which sources of configuration values should be used and the order they should be used in. The first one in order that returns a value for a key will "win" and that value will be placed in the config object.
+The `ConfigBuilder` class uses **config sources** to resolve configuration keys defined in the **config builder functon**. When you create a new instance you also specify which sources the builder should look for values in and the order they should be used. The first one in order that returns a value for a key will "win" and that value will be placed in the config object.
 
 ```typescript
 const builder = new ConfigBuilder([source1, source2, source3, source4])

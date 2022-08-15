@@ -21,6 +21,7 @@
 	},
 	"sourceMaps": true,
 	"exclude": [
+		"examples/**",
 		"jest.config.ts",
 		".*.spec.tsx?$",
 		".*.test.tsx?$",

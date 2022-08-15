@@ -20,7 +20,7 @@ const start = async () => {
 
 	// Create our config sources in prioritized order. For each key if env source returns undefined try json config source
 	// This allows us to "override" configurations with environment variables or fall back to json as default
-	const configBuilder = new ConfigBuilder([new EnvConfigSource(), jsonConfigSource])
+	const configBuilder = new ConfigBuilder([jsonConfigSource, new EnvConfigSource()])
 
 	// building works the same way as allways and will use the value from the first source that returns something
 	const config = await configBuilder.build((req) => ({

@@ -113,6 +113,11 @@ describe("EnvConfigSource", () => {
 		expect(result).toBe("ahplA")
 	})
 
+	it("works for mixed-case variables", () => {
+		// Path is a known variable that exists on windows and linux
+		expect(envSource.get("PATH")).toBeDefined()
+	})
+
 	describe("cacheMode = noCache", () => {
 		beforeEach(() => {
 			envSource = new EnvConfigSource({ cacheMode: "noCache" })

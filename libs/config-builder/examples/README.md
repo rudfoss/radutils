@@ -1,3 +1,14 @@
+# ConfigBuilder examples
+
+This folder contains example implementations of the config builder.
+
+To run these examples locally copy this folder to your local machine and run `npm i` to install dependencies. Then you can run each script either through the VSCode debugger or using node:
+
+```bash
+node -r ts-node/register/transpile-only [script]
+node -r ts-node/register/transpile-only basics.ts
+```
+
 ## Basics [[link](./basics.ts)]
 
 Sets up a configuration builder with a single source that loads from local environment variables. Demonstrates structuring the configuration as well as formatters for transforming data.

@@ -20,13 +20,21 @@ export class EnvConfigSource implements ConfigSource {
 		}
 
 		if (this.options.cacheMode === "perInstance") {
-			this.envCache = { ...process.env }
+			this.envCache = this.normalizedEnv
 		}
+	}
+
+	protected get normalizedEnv() {
+		const env: Record<string, unknown> = {}
+		for (const [key, value] of Object.entries(process.env)) {
+			env[key.toUpperCase()] = value
+		}
+		return env
 	}
 
 	public onBuildStart() {
 		if (this.options.cacheMode === "perBuild") {
-			this.envCache = { ...process.env }
+			this.envCache = this.normalizedEnv
 		}
 	}
 
@@ -34,7 +42,7 @@ export class EnvConfigSource implements ConfigSource {
 		const keysToTry = this.options.keyTransform(key)
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const env: Record<string, TValue> = (this.envCache ?? process.env) as any
+		const env: Record<string, TValue> = (this.envCache ?? this.normalizedEnv) as any
 
 		return findFirstOrDefault<TValue>(Array.isArray(keysToTry) ? keysToTry : [keysToTry], env).value
 	}

@@ -1,5 +1,5 @@
 // TODO: Fix this import (it compiles to a complete lodash import which is no bueno)
-import { get } from "lodash"
+import get from "lodash/get"
 
 /**
  * The default lookup function for `JSONConfigSource`. It will check if the object contains the specific key by directly passing it to lodash.get. Additionaly it will also try replacing `-` and `_` with `.` to handle those common configuration key formats.
