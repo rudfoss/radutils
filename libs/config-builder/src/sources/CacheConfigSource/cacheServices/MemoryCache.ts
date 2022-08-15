@@ -18,7 +18,7 @@ export class MemoryCache implements CacheService {
 
 		this.cache.set(cacheKey, data)
 		if (ttl !== Infinity) {
-			if (this.timeouts.get(cacheKey)) {
+			if (this.timeouts.has(cacheKey)) {
 				clearTimeout(this.timeouts.get(cacheKey) as any)
 			}
 			this.timeouts.set(cacheKey, setTimeout(() => this.del(cacheKey), ttl) as any)
@@ -27,6 +27,10 @@ export class MemoryCache implements CacheService {
 		return true
 	}
 	public del(cacheKey: string) {
+		if (this.timeouts.has(cacheKey)) {
+			clearTimeout(this.timeouts.get(cacheKey) as any)
+			this.timeouts.delete(cacheKey)
+		}
 		return this.cache.delete(cacheKey)
 	}
 }

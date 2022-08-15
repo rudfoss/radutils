@@ -35,7 +35,33 @@ export type BuildFunction<TConfig> = (required: RequiredConfig, optional: Option
  */
 export interface BuildRunContext {
 	readonly buildFnRef: BuildFunction<unknown>
-	readonly context: Record<string, unknown>
+	readonly sharedData: Map<string, unknown>
+}
+
+/**
+ * Describes the options provided as the only argument to the `onBuildStart` method on config sources.
+ */
+export interface OnBuildStartOptions {
+	requiredKeys: ReadonlySet<string>
+	optionalKeys: ReadonlySet<string>
+	context: BuildRunContext
+}
+
+/**
+ * Describes the options provided as the only argument to the `onBuildSuccess` method on config sources.
+ */
+export interface OnBuildSuccessOptions<TConfig = unknown> {
+	config: TConfig
+	keyValues: ReadonlyMap<string, unknown>
+	context: BuildRunContext
+}
+
+/**
+ * Describes the options provided as the only argument to the `onBuildError` method on config sources.
+ */
+export interface OnBuildErrorOptions {
+	error: ConfigBuilderError
+	context: BuildRunContext
 }
 
 /**
@@ -45,33 +71,15 @@ export interface ConfigSource {
 	/**
 	 * Lifecycle function that is called before the configuration object is resolved. It receives the full set of all required and optional keys that is part of the configuration object defined in the build function.
 	 */
-	onBuildStart?: (options: {
-		requiredKeys: ReadonlySet<string>
-		optionalKeys: ReadonlySet<string>
-		context: BuildRunContext
-	}) => void | Promise<void>
+	onBuildStart?: (options: OnBuildStartOptions) => void | Promise<void>
 	/**
 	 * Lifecycle function that is called after the configuration object has been resolved without errors. It receives the full configuration object with final values as well as a key-value store of every key and its final, resolved and formatted value.
-	 * @param config The final configuration object
-	 * @param keyValues All keys with their resolved and formatted values
 	 */
-	onBuildSuccess?: <TConfig = unknown>(result: {
-		config: TConfig
-		keyValues: ReadonlyMap<string, unknown>
-		context: BuildRunContext
-	}) => void | Promise<void>
+	onBuildSuccess?: <TConfig = unknown>(options: OnBuildSuccessOptions<TConfig>) => void | Promise<void>
 	/**
 	 * Lifecycle function that is called if a fatal error occurs during the resolution of a configuration object.
 	 */
-	onBuildError?: (options: { error: ConfigBuilderError; context: BuildRunContext }) => void | Promise<void>
-	/**
-	 * Lifecycle function that is called after the configuration object has been resolved or if the resolution fails. The result will contain the error or the final configuration object.
-	 */
-	onBuildSettled?: <TConfig = unknown>(result: {
-		error?: ConfigBuilderError
-		config?: TConfig
-		context: BuildRunContext
-	}) => void | Promise<void>
+	onBuildError?: (options: OnBuildErrorOptions) => void | Promise<void>
 
 	/**
 	 * Resolves the value of a configuration key if it is known by the source. If the key is NOT known the function returns `undefined`.

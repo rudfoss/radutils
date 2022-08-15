@@ -178,5 +178,10 @@ describe("EnvConfigSource", () => {
 			expect(envSource.get("ENV_CONFIG_TEST_B")).toEqual("Bravo")
 			expect(envSource.get("ENV_CONFIG_TEST_C")).toEqual(undefined)
 		})
+
+		it("reuses env cache when cloning for performance", () => {
+			const clonedSource = envSource.clone()
+			expect(clonedSource["envCache"]).toBe(envSource["envCache"])
+		})
 	})
 })

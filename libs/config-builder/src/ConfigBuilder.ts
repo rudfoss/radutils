@@ -42,8 +42,7 @@ export class ConfigBuilder {
 	protected lifecycleListeners = {
 		onBuildStart: new Set<LifecycleListener<Required<ConfigSource>["onBuildStart"]>>(),
 		onBuildSuccess: new Set<LifecycleListener<Required<ConfigSource>["onBuildSuccess"]>>(),
-		onBuildError: new Set<LifecycleListener<Required<ConfigSource>["onBuildError"]>>(),
-		onBuildSettled: new Set<LifecycleListener<Required<ConfigSource>["onBuildSettled"]>>()
+		onBuildError: new Set<LifecycleListener<Required<ConfigSource>["onBuildError"]>>()
 	}
 
 	/**
@@ -65,9 +64,6 @@ export class ConfigBuilder {
 			}
 			if (source.onBuildError) {
 				this.lifecycleListeners.onBuildError.add({ fn: source.onBuildError, self: source })
-			}
-			if (source.onBuildSettled) {
-				this.lifecycleListeners.onBuildSettled.add({ fn: source.onBuildSettled, self: source })
 			}
 		}
 	}
@@ -100,13 +96,6 @@ export class ConfigBuilder {
 				await fn.call(self, { error, context })
 			}
 		}, "onBuildError")
-	}
-	protected async runOnBuildSettled<TConfig>(context: BuildRunContext, config?: TConfig, error?: ConfigBuilderError) {
-		return ConfigBuilderLifecycleError.wrap(async () => {
-			for (const { fn, self } of this.lifecycleListeners.onBuildSettled) {
-				await fn.call(self, { config, error, context })
-			}
-		}, "onBuildSettled")
 	}
 
 	protected async resolveConfigKeyValues(keys: Iterable<string>) {
@@ -166,18 +155,17 @@ export class ConfigBuilder {
 
 	protected async buildSelf<TConfig>(
 		buildFn: BuildFunction<TConfig>,
-		context: Record<string, unknown> = {}
+		sharedData: Map<string, unknown>
 	): Promise<TConfig> {
 		let finalConfig: TConfig | undefined = undefined
 		const resolvedKeyValues = new Map<string, unknown>()
-		let configBuilderError: ConfigBuilderError | undefined = undefined
 
 		const requiredKeys = setMerger<string>()
 		const optionalKeys = setMerger<string>()
 
 		const buildRunContext: BuildRunContext = {
 			buildFnRef: buildFn,
-			context
+			sharedData: sharedData
 		}
 
 		const required: RequiredConfig = (key, formatter) => {
@@ -222,11 +210,8 @@ export class ConfigBuilder {
 				throw new ConfigBuilderMissingRequiredKeysError(Array.from(missingRequiredKeys))
 			}
 		} catch (err) {
-			configBuilderError = err as any
 			await this.runOnBuildError(err as any, buildRunContext)
 			throw err
-		} finally {
-			await this.runOnBuildSettled(buildRunContext, finalConfig, configBuilderError)
 		}
 
 		await this.runOnBuildSuccess(finalConfig, resolvedKeyValues, buildRunContext)
@@ -246,9 +231,13 @@ export class ConfigBuilder {
 	/**
 	 * Builds the configuration object defined by the `buildFn` provided.
 	 * @param buildFn
-	 * @param context Optionally specify context data that is shared between all soruces during deployment.
+	 * @param sharedData Optionally specify some data that will be shared beween sources. If the data is provided as a plain object a new Map instance will be constructed containing the objects own, enumerable properties (using `Object.entries()`).
 	 */
-	public async build<TConfig>(buildFn: BuildFunction<TConfig>, context?: Record<string, unknown>): Promise<TConfig> {
-		return this.clone().buildSelf(buildFn, context)
+	public async build<TConfig>(
+		buildFn: BuildFunction<TConfig>,
+		sharedData?: Record<string, unknown> | Map<string, unknown>
+	): Promise<TConfig> {
+		const sharedDataMap = sharedData instanceof Map ? sharedData : new Map(sharedData ? Object.entries(sharedData) : [])
+		return this.clone().buildSelf(buildFn, sharedDataMap)
 	}
 }

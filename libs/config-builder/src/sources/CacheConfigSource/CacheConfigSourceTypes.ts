@@ -17,7 +17,7 @@ export interface CacheConfigSourceOptions {
 	/**
 	 * Specify whether caching is enabled or not. If a function is provided the function is executed on build start to determine if caching is enabled for this specific run.
 	 */
-	enabled?: (<TConfig = unknown>(previousConfig: TConfig) => boolean | Promise<boolean>) | boolean
+	enabled?: (() => boolean | Promise<boolean>) | boolean
 
 	/**
 	 * The cache time to live in milliseconds. Is sent as a parameter to the cache service when a value is set. The cache service may determine what type of strategy to use with the timer.
