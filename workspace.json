@@ -2,6 +2,7 @@
 	"$schema": "./node_modules/nx/schemas/workspace-schema.json",
 	"version": 2,
 	"projects": {
-		"config-builder": "libs/config-builder"
+		"config-builder": "libs/config-builder",
+		"config-builder-source-azure": "libs/config-builder-source-azure"
 	}
 }

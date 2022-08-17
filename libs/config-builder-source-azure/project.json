@@ -1,0 +1,45 @@
+{
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/config-builder-source-azure/src",
+	"projectType": "library",
+	"targets": {
+		"build": {
+			"executor": "@nrwl/js:swc",
+			"outputs": ["{options.outputPath}"],
+			"options": {
+				"outputPath": "dist/libs/config-builder-source-azure",
+				"main": "libs/config-builder-source-azure/src/index.ts",
+				"tsConfig": "libs/config-builder-source-azure/tsconfig.lib.json",
+				"assets": ["libs/config-builder-source-azure/*.md"]
+			}
+		},
+		"publish": {
+			"executor": "@nrwl/workspace:run-commands",
+			"options": {
+				"command": "node tools/scripts/publish.mjs config-builder-source-azure {args.ver} {args.tag}"
+			},
+			"dependsOn": [
+				{
+					"projects": "self",
+					"target": "build"
+				}
+			]
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"outputs": ["{options.outputFile}"],
+			"options": {
+				"lintFilePatterns": ["libs/config-builder-source-azure/**/*.ts"]
+			}
+		},
+		"test": {
+			"executor": "@nrwl/jest:jest",
+			"outputs": ["coverage/libs/config-builder-source-azure"],
+			"options": {
+				"jestConfig": "libs/config-builder-source-azure/jest.config.ts",
+				"passWithNoTests": true
+			}
+		}
+	},
+	"tags": []
+}
