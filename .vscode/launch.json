@@ -25,6 +25,7 @@
 			"resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
 			"env": {
 				"NODE_ENV": "development"
+				// "NODE_DEBUG": "module"
 			}
 		}
 	]
