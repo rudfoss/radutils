@@ -4,7 +4,7 @@
 npm install @radutils/config-builder@beta
 ```
 
-`@radutils` ConfigBuilder provides a type-safe way of compiling configuration options from multiple sources for your application. It separates the configuration definition from the source or sources allowing you to construct configuration objects declaratively and separated from where values come from and how they are retrieved. It also enables you to construct different configuration objects for multiple scenarios based on the same sources in a thread-safe way.
+`@radutils` ConfigBuilder provides a type-safe way of compiling configuration options from multiple sources for your application. It separates the configuration definition from the source or sources allowing you to construct configuration objects declaratively and separated from where values come from and how they are retrieved. It also enables you to construct different configuration objects for multiple scenarios based on the same sources. Each build function will use separate instances of the sources thus avoiding collisions when running async code.
 
 ## Usage
 
@@ -71,7 +71,11 @@ The [basic example](./examples//basics.ts) describes how to set up a very simple
 
 ## Concepts
 
-The two core concepts you need to grok when working with this library are **config builder function** and **config sources**. They are connected together through an instance of the `ConfigBuilder` class that serves as a bootrsapper for the **config builder function**
+The thee core concepts you will be working with when using this library are the **ConfigBuilder**, the **config builder function** and **config sources**. Together they provide a way for you to declaratively build strongly typed configuration objects.
+
+### Config Builder
+
+The **ConfigBuilder** class orchestrates building configuration objects using different sources and build functions. To build configurations you create an instance of the `ConfigBuilder` class and provide it with a set of sources that control where configuration values can come from.
 
 ### Config Builder Function
 
@@ -105,6 +109,7 @@ Name|Description
 [EnvConfigSource](./src/sources/EnvConfigSource)|Loads configurations from environment variables.
 [JSONConfigSource](./src/sources/JSONConfigSource)|Loads configurations from a static json object or using an asynchronous getter function.
 [CacheConfigSource](./src/sources/CacheConfigSource/)|This source caches resolved values and returns them on the next run.
+[AzureConfigSource](https://github.com/rudfoss/radutils/tree/main/libs/config-builder-source-azure)|Loads configuration from Azure App Configuration and Azure Key Vault services. Installed separately.
 
 ## Error handling
 
