@@ -1,4 +1,4 @@
-import { createIDGenerator } from "@radutils/config-builder/utils/createIDGenerator"
+import { createIDGenerator } from "../../utils/createIDGenerator"
 import { BuildRunContext, ConfigSource, OnBuildStartOptions, OnBuildSuccessOptions } from "../../ConfigBuilderTypes"
 import { CacheConfigSourceOptions } from "./CacheConfigSourceTypes"
 import { MemoryCache } from "./cacheServices"
