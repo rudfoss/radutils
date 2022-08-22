@@ -1,10 +1,22 @@
 {
-	"extends": "../tsconfig.lib.json",
+	"compileOnSave": false,
 	"compilerOptions": {
-		"paths": {
-			"@radutils/config-builder": ["dist/libs/config-builder/index"],
-			"@radutils/config-builder/*": ["dist/libs/config-builder/*"]
-		}
+		"rootDir": ".",
+		"sourceMap": true,
+		"declaration": false,
+		"moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"importHelpers": true,
+		"target": "es2017",
+		"module": "commonjs",
+		"lib": ["ES2022"],
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"downlevelIteration": true,
+		"strictNullChecks": true,
+		"esModuleInterop": true,
+		"baseUrl": "."
 	},
 	"files": [],
 	"include": ["**/*.ts"],
