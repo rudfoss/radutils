@@ -67,7 +67,7 @@ const start = async () => {
 start()
 ```
 
-The [basic example](./examples//basics.ts) describes how to set up a very simple configuration loader. More examples can be found in the [examples folder](./examples).
+The [basic example](./examples/basics.ts) describes how to set up a very simple configuration loader. More examples can be found in the [examples folder](./examples).
 
 ## Concepts
 
