@@ -1,1 +1,1 @@
-export * from "./lib/config-builder-source-azure"
+export * from "./ConfigSourceAzureAppConfiguration"

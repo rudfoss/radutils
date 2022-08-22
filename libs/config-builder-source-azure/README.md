@@ -1,11 +1,12 @@
-# config-builder-source-azure
+# Azure config source
 
-This library was generated with [Nx](https://nx.dev).
+```
+npm install @radutils/config-builder-source-azure@beta
+```
 
-## Building
+This library contains config sources for Azure App Configuration and Azure Key Valut compatible with `@radutils/config-builder`.
 
-Run `nx build config-builder-source-azure` to build the library.
 
-## Running unit tests
+## Azure App Configuration
 
-Run `nx test config-builder-source-azure` to execute the unit tests via [Jest](https://jestjs.io).
+This source can retrieve configuration values from an Azure App Configuration service.

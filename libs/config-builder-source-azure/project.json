@@ -3,14 +3,27 @@
 	"sourceRoot": "libs/config-builder-source-azure/src",
 	"projectType": "library",
 	"targets": {
-		"build": {
+		"build-swc": {
 			"executor": "@nrwl/js:swc",
 			"outputs": ["{options.outputPath}"],
 			"options": {
 				"outputPath": "dist/libs/config-builder-source-azure",
 				"main": "libs/config-builder-source-azure/src/index.ts",
 				"tsConfig": "libs/config-builder-source-azure/tsconfig.lib.json",
-				"assets": ["libs/config-builder-source-azure/*.md"]
+				"assets": ["libs/config-builder-source-azure/*.md", "libs/config-builder-source-azure/LICENSE"],
+				"buildableProjectDepsInPackageJsonType": "dependencies"
+			}
+		},
+		"build": {
+			"dependsOn": [
+				{
+					"projects": "self",
+					"target": "build-swc"
+				}
+			],
+			"executor": "@nrwl/workspace:run-commands",
+			"options": {
+				"command": "node -r ts-node/register/transpile-only tools/scripts/fixLibBuildStructure.ts config-builder-source-azure"
 			}
 		},
 		"publish": {
@@ -37,7 +50,8 @@
 			"outputs": ["coverage/libs/config-builder-source-azure"],
 			"options": {
 				"jestConfig": "libs/config-builder-source-azure/jest.config.ts",
-				"passWithNoTests": true
+				"passWithNoTests": false,
+				"codeCoverage": true
 			}
 		}
 	},

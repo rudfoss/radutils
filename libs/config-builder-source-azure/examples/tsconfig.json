@@ -1,0 +1,14 @@
+{
+	"extends": "../tsconfig.lib.json",
+	"compilerOptions": {
+		"paths": {
+			"@radutils/config-builder": ["dist/libs/config-builder/index"],
+			"@radutils/config-builder/*": ["dist/libs/config-builder/*"],
+			"@radutils/config-builder-source-azure": ["dist/libs/config-builder-source-azure/index"],
+			"@radutils/config-builder-source-azure/*": ["dist/libs/config-builder-source-azure/*"]
+		}
+	},
+	"files": [],
+	"include": ["**/*.ts"],
+	"references": []
+}
