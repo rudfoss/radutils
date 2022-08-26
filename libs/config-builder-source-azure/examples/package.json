@@ -1,0 +1,16 @@
+{
+	"name": "@radutils/config-builder-examples",
+	"version": "1.0.0",
+	"description": "This folder contains example implementations of the config builder.",
+	"private": true,
+	"keywords": [],
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"@radutils/config-builder": "^0.0.3-beta.5",
+		"@radutils/config-builder-source-azure": "^0.0.1-beta.3"
+	},
+	"devDependencies": {
+		"ts-node": "^10.9.1"
+	}
+}

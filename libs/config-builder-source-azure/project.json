@@ -23,7 +23,9 @@
 			],
 			"executor": "@nrwl/workspace:run-commands",
 			"options": {
-				"command": "node -r ts-node/register/transpile-only tools/scripts/fixLibBuildStructure.ts config-builder-source-azure"
+				"commands": [
+					"node -r ts-node/register/transpile-only tools/scripts/fixLibBuildStructure.ts config-builder-source-azure"
+				]
 			}
 		},
 		"publish": {

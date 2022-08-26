@@ -1,7 +1,6 @@
 import type { TokenCredential } from "@azure/identity"
 import { SecretClient } from "@azure/keyvault-secrets"
 import { ContentTypeResolver } from "../ContentTypeResolver"
-import { ConfigBuilderAzureSourceContentTypeResolverError } from "../errors"
 import { ConfigBuilderAzureSourceKeyVaultReferenceNotFoundError } from "../errors/ConfigBuilderAzureSourceKeyVaultReferenceNotFoundError"
 
 export interface KeyVaultResolverOptions {
@@ -44,7 +43,7 @@ export const keyVaultResolver =
 		try {
 			keyVaultRef = JSON.parse(value)
 		} catch (error) {
-			throw new ConfigBuilderAzureSourceContentTypeResolverError(
+			throw new Error(
 				`Failed to parse JSON value of key "${key}@${label}". Expected JSON format for key vault reference.`,
 				error as Error
 			)

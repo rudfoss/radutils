@@ -18,7 +18,7 @@
 			"type": "pwa-node",
 			"request": "launch",
 			"args": ["${fileBasename}", "config-builder"],
-			"runtimeArgs": ["-r", "ts-node/register/transpile-only"],
+			"runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
 			"cwd": "${fileDirname}",
 			"outputCapture": "std",
 			"sourceMaps": true,

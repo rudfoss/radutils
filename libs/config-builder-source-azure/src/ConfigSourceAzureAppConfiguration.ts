@@ -4,12 +4,8 @@ import type { ConfigurationSetting } from "@azure/app-configuration"
 import { DefaultAzureCredential } from "@azure/identity"
 import { AppConfigurationClient } from "@azure/app-configuration"
 import { ContentTypeResolver } from "./ContentTypeResolver"
-import {
-	jsonConfigResolver,
-	jsonContentType,
-	keyVaultReferenceContentType,
-	keyVaultResolver
-} from "./contentTypeResolvers"
+import { jsonResolver, jsonContentType, keyVaultReferenceContentType, keyVaultResolver } from "./contentTypeResolvers"
+import { ConfigBuilderAzureSourceContentTypeResolverError } from "./errors"
 
 export interface ConfigSourceAzureAppConfigurationOptions {
 	/**
@@ -60,6 +56,7 @@ export class ConfigSourceAzureAppConfiguration implements ConfigSource {
 	 * Cache of resolved key/values. Indexed by key -> label
 	 */
 	protected valueCache = new Map<string, Map<string, ResolvedConfigSetting>>()
+	protected isPreloaded = false
 
 	public constructor(options: ConfigSourceAzureAppConfigurationOptions) {
 		this.options = {
@@ -71,31 +68,48 @@ export class ConfigSourceAzureAppConfiguration implements ConfigSource {
 	}
 
 	protected async resolveContentType(configurationSetting: ConfigurationSetting): Promise<ResolvedConfigSetting> {
-		for (const [contentTypeMatcher, resolver] of this.options.contentTypeResolvers.entries()) {
-			const contentTypeRx =
-				typeof contentTypeMatcher === "string" ? new RegExp(`^${contentTypeMatcher}$`, "i") : contentTypeMatcher
+		try {
+			for (const [contentTypeMatcher, resolver] of this.options.contentTypeResolvers.entries()) {
+				if (typeof contentTypeMatcher === "string" && (configurationSetting.contentType ?? "" === contentTypeMatcher)) {
+					const resolvedValue = await resolver(configurationSetting)
+					return { configurationSetting, resolvedValue: resolvedValue }
+				}
 
-			if (contentTypeRx.test(configurationSetting.contentType ?? "")) {
-				return { configurationSetting, resolvedValue: await resolver(configurationSetting) }
+				if ((contentTypeMatcher as RegExp).test(configurationSetting.contentType ?? "")) {
+					const resolvedValue = await resolver(configurationSetting)
+					return { configurationSetting, resolvedValue: resolvedValue }
+				}
 			}
-		}
 
-		return { configurationSetting, resolvedValue: configurationSetting.value }
+			return { configurationSetting, resolvedValue: configurationSetting.value }
+		} catch (error) {
+			if (error instanceof ConfigBuilderAzureSourceContentTypeResolverError) {
+				throw error
+			}
+
+			throw new ConfigBuilderAzureSourceContentTypeResolverError((error as Error)?.message, error as Error)
+		}
 	}
 	protected async preloadConfigStore() {
 		for await (const setting of this.options.client.listConfigurationSettings()) {
 			const valueSet = this.valueCache.get(setting.key) ?? new Map<string, ResolvedConfigSetting>()
-			valueSet.set(setting.label ?? BLANK_LABEL, await this.resolveContentType(setting))
+			const finalValue = await this.resolveContentType(setting)
+			valueSet.set(setting.label ?? BLANK_LABEL, finalValue)
 			this.valueCache.set(setting.key, valueSet)
 		}
 	}
 
 	public async onBuildStart() {
 		this.valueCache.clear()
-		await this.preloadConfigStore()
+		this.isPreloaded = false
 	}
 
-	public get<TValue>(key: string) {
+	public async get<TValue>(key: string) {
+		if (!this.isPreloaded) {
+			await this.preloadConfigStore()
+			this.isPreloaded = true
+		}
+
 		const labelledValues = this.valueCache.get(key)
 		if (!labelledValues) return undefined
 
@@ -123,8 +137,8 @@ export class ConfigSourceAzureAppConfiguration implements ConfigSource {
 		const finalCredential = credential ?? new DefaultAzureCredential()
 
 		const allContentTypeResolvers = new Map([
-			[jsonContentType, jsonConfigResolver()],
 			[keyVaultReferenceContentType, keyVaultResolver({ credential: finalCredential })],
+			[jsonContentType, jsonResolver()],
 			...(contentTypeResolvers ? Array.from(contentTypeResolvers) : [])
 		])
 

@@ -3,6 +3,7 @@ import { AppConfigurationClient } from "@azure/app-configuration"
 import { AzureCliCredential } from "@azure/identity"
 import { ConfigSourceAzureAppConfiguration } from "./ConfigSourceAzureAppConfiguration"
 import { jsonContentType, keyVaultReferenceContentType } from "./contentTypeResolvers"
+import { ConfigBuilderAzureSourceContentTypeResolverError } from "./errors"
 
 const BLANK_LABEL = "%00"
 
@@ -93,6 +94,8 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 	})
 	it("caches config values correctly", async () => {
 		await source.onBuildStart()
+		await source.get("foo")
+
 		expect(mockAppConfigClient.listConfigurationSettings.mock.calls.length).toBe(1)
 
 		expect(source["valueCache"].get("foo")?.get(BLANK_LABEL)).toEqual({
@@ -188,18 +191,21 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 
 		await defaultSource.onBuildStart()
 		await defaultSourceWithOverrides.onBuildStart()
+		await defaultSource.get("foo")
+		await defaultSourceWithOverrides.get("foo")
 
-		expect(defaultSource.get("json")).toEqual({ hey: true, there: 42 })
-		expect(defaultSourceWithOverrides.get("json")).toEqual("mockValue")
+		expect(await defaultSource.get("json")).toEqual({ hey: true, there: 42 })
+		expect(await defaultSourceWithOverrides.get("json")).toEqual("mockValue")
 		expect(mockJsonResolver).toHaveBeenCalled()
 	})
 
 	it("checks labels before falling back to unlabelled", async () => {
 		await source.onBuildStart()
+		await source.get("foo")
 
-		expect(source.get("foo")).toEqual("labelled-dev")
-		expect(source.get("not-defined")).not.toBeDefined()
-		expect(source.get("bar")).toEqual("bar")
+		expect(await source.get("foo")).toEqual("labelled-dev")
+		expect(await source.get("not-defined")).not.toBeDefined()
+		expect(await source.get("bar")).toEqual("bar")
 	})
 	it("falls back to first defined label", async () => {
 		source = new ConfigSourceAzureAppConfiguration({
@@ -207,9 +213,10 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 			client: mockAppConfigClient as any
 		})
 		await source.onBuildStart()
+		await source.get("foo")
 
-		expect(source.get("foo")).toEqual("labelled-pr123")
-		expect(source.get("bar")).toEqual("bar")
+		expect(await source.get("foo")).toEqual("labelled-pr123")
+		expect(await source.get("bar")).toEqual("bar")
 	})
 
 	it("does not use unlabelled if configured so", async () => {
@@ -220,9 +227,10 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 		})
 
 		await source.onBuildStart()
+		await source.get("foo")
 
-		expect(source.get("foo")).toEqual("labelled-dev")
-		expect(source.get("bar")).not.toBeDefined()
+		expect(await source.get("foo")).toEqual("labelled-dev")
+		expect(await source.get("bar")).not.toBeDefined()
 	})
 
 	it("supports resolving content types by string", async () => {
@@ -235,6 +243,7 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 		})
 
 		await source.onBuildStart()
+		await source.get("foo")
 		expect(mockJsonResolver.mock.calls.length).toBe(2)
 		expect(mockJsonResolver.mock.calls[0][0]).toEqual({
 			key: "json",
@@ -248,7 +257,7 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 			contentType: "application/json"
 		})
 
-		expect(source.get("json")).toEqual({ hey: true, there: 42, labelled: "yes" })
+		expect(await source.get("json")).toEqual({ hey: true, there: 42, labelled: "yes" })
 	})
 	it("supports resolving content types by regex", async () => {
 		const mockJsonResolver = jest.fn(({ value }) => JSON.parse(value))
@@ -260,6 +269,7 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 		})
 
 		await source.onBuildStart()
+		await source.get("foo")
 		expect(mockJsonResolver.mock.calls.length).toBe(2)
 		expect(mockJsonResolver.mock.calls[0][0]).toEqual({
 			key: "json",
@@ -273,6 +283,50 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 			contentType: "application/json"
 		})
 
-		expect(source.get("json")).toEqual({ hey: true, there: 42, labelled: "yes" })
+		expect(await source.get("json")).toEqual({ hey: true, there: 42, labelled: "yes" })
+	})
+
+	it("throws if config resolver throws", async () => {
+		const mockError = new ConfigBuilderAzureSourceContentTypeResolverError("mockError")
+
+		const contentTypeResolvers = new Map([
+			[
+				"application/json",
+				() => {
+					throw mockError
+				}
+			],
+			[
+				"text/plain",
+				() => {
+					throw new Error("rawError")
+				}
+			]
+		])
+
+		const newSource = new ConfigSourceAzureAppConfiguration({
+			labels: ["dev"],
+			client: mockAppConfigClient as any,
+			contentTypeResolvers
+		})
+
+		expect(async () => {
+			try {
+				console.log("foo")
+				await newSource.get("foo")
+			} catch (e) {
+				console.error("foo", e)
+				throw e
+			}
+		}).rejects.toThrow(ConfigBuilderAzureSourceContentTypeResolverError)
+		expect(async () => {
+			try {
+				console.log("json")
+				await newSource.get("json")
+			} catch (e) {
+				console.error("json", e)
+				throw e
+			}
+		}).rejects.toThrow(mockError)
 	})
 })

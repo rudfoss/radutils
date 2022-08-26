@@ -1,0 +1,2 @@
+# Add .env with APPCONFIG-ENDPOINT setting before running tests
+.env
