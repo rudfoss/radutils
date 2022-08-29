@@ -56,7 +56,7 @@ export const keyVaultResolver =
 			return secretValue?.value
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
-			if (error?.statusCode === 404) {
+			if (error.statusCode === 404) {
 				if (!throwIfValuleNotFound) {
 					return undefined
 				}
