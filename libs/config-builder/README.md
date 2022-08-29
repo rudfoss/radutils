@@ -4,7 +4,10 @@
 npm install @radutils/config-builder@beta
 ```
 
+
 `@radutils` ConfigBuilder provides a type-safe way of compiling configuration options from multiple sources for your application. It separates the configuration definition from the source or sources allowing you to construct configuration objects declaratively and separated from where values come from and how they are retrieved. It also enables you to construct different configuration objects for multiple scenarios based on the same sources. Each build function will use separate instances of the sources thus avoiding collisions when running async code.
+
+**Info**: Although the version is not explicitly tagged with `beta` it is still sub 1.0 and should be regarded as unstable for how. I do think I've landed on a decent API, but I'm open to suggestions for improvements.
 
 ## Usage
 
@@ -94,7 +97,7 @@ const config = await builder.build((required, optional) => {
 
 ### Config sources
 
-The `ConfigBuilder` class uses **config sources** to resolve configuration keys defined in the **config builder functon**. When you create a new instance you also specify which sources the builder should look for values in and the order they should be used. The first one in order that returns a value for a key will "win" and that value will be placed in the config object.
+The `ConfigBuilder` class uses **config sources** to resolve configuration keys defined in the **config builder function**. When you create a new instance you also specify which sources the builder should look for values in and the order they should be used. The first one in order that returns a value for a key will "win" and that value will be placed in the config object.
 
 ```typescript
 const builder = new ConfigBuilder([source1, source2, source3, source4])

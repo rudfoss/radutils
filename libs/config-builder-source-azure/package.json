@@ -1,6 +1,6 @@
 {
 	"name": "@radutils/config-builder-source-azure",
-	"version": "0.0.1-beta.3",
+	"version": "0.1.0",
 	"type": "commonjs",
 	"private": false,
 	"description": "Config Builder source for Azure App Configuration service endpoints with Key Vault reference support",

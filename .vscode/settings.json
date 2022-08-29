@@ -36,5 +36,6 @@
 	},
 	"typescript.tsdk": "node_modules\\typescript\\lib",
 	"editor.wordWrapColumn": 120,
-	"editor.wordWrap": "wordWrapColumn"
+	"editor.wordWrap": "wordWrapColumn",
+	"cSpell.words": ["APPCONFIG", "radutils"]
 }
