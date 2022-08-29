@@ -2,6 +2,7 @@
 import { AppConfigurationClient } from "@azure/app-configuration"
 import { AzureCliCredential } from "@azure/identity"
 import { ConfigSourceAzureAppConfiguration } from "./ConfigSourceAzureAppConfiguration"
+import { ContentTypeResolver } from "./ContentTypeResolver"
 import { jsonContentType, keyVaultReferenceContentType } from "./contentTypeResolvers"
 import { ConfigBuilderAzureSourceContentTypeResolverError } from "./errors"
 
@@ -288,18 +289,29 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 
 	it("throws if config resolver throws", async () => {
 		const mockError = new ConfigBuilderAzureSourceContentTypeResolverError("mockError")
+		// Because values are preloaded we need to be able to control which resolver throws in order to properly test the resolver error type
+		const throwIn = {
+			json: true,
+			textPlain: true
+		}
 
-		const contentTypeResolvers = new Map([
+		const contentTypeResolvers = new Map<string, ContentTypeResolver<any>>([
 			[
 				"application/json",
-				() => {
-					throw mockError
+				({ value }) => {
+					if (throwIn.json) {
+						throw mockError
+					}
+					return value as any
 				}
 			],
 			[
 				"text/plain",
-				() => {
-					throw new Error("rawError")
+				({ value }) => {
+					if (throwIn.textPlain) {
+						throw new Error("rawError")
+					}
+					return value as any
 				}
 			]
 		])
@@ -310,23 +322,8 @@ describe("ConfigSourceAzureAppConfiguration", () => {
 			contentTypeResolvers
 		})
 
-		expect(async () => {
-			try {
-				console.log("foo")
-				await newSource.get("foo")
-			} catch (e) {
-				console.error("foo", e)
-				throw e
-			}
-		}).rejects.toThrow(ConfigBuilderAzureSourceContentTypeResolverError)
-		expect(async () => {
-			try {
-				console.log("json")
-				await newSource.get("json")
-			} catch (e) {
-				console.error("json", e)
-				throw e
-			}
-		}).rejects.toThrow(mockError)
+		await expect(async () => newSource.get("foo")).rejects.toThrow(ConfigBuilderAzureSourceContentTypeResolverError)
+		throwIn.textPlain = false
+		await expect(async () => newSource.get("json")).rejects.toThrow(mockError)
 	})
 })
