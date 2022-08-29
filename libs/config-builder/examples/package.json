@@ -7,7 +7,7 @@
 	"author": "",
 	"license": "MIT",
 	"dependencies": {
-		"@radutils/config-builder": "^0.0.3-beta.5"
+		"@radutils/config-builder": "*"
 	},
 	"devDependencies": {
 		"ts-node": "^10.9.1"

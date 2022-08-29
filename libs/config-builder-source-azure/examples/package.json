@@ -7,8 +7,8 @@
 	"author": "",
 	"license": "MIT",
 	"dependencies": {
-		"@radutils/config-builder": "^0.0.3-beta.5",
-		"@radutils/config-builder-source-azure": "^0.0.1-beta.3"
+		"@radutils/config-builder": "*",
+		"@radutils/config-builder-source-azure": "*"
 	},
 	"devDependencies": {
 		"ts-node": "^10.9.1"

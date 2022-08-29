@@ -3,7 +3,7 @@ dotenv.config()
 
 import { ConfigBuilder } from "@radutils/config-builder"
 import { asBoolean } from "@radutils/config-builder/formatters"
-import { EnvConfigSource, CacheConfigSource, NPMCache } from "@radutils/config-builder/sources"
+import { EnvConfigSource } from "@radutils/config-builder/sources"
 import { ConfigSourceAzureAppConfiguration } from "@radutils/config-builder-source-azure"
 
 /**
@@ -19,7 +19,9 @@ const start = async () => {
 
 	// Instantiate the builder
 	const builder = new ConfigBuilder([
-		new CacheConfigSource({ cache: new NPMCache(), ttl: 1000 * 30 }), // Enable caching so that subsequent boot times are faster
+		// Uncomment this line to enable caching so that subsequent boot times are faster
+		// new CacheConfigSource({ cache: new NPMCache(), ttl: 1000 * 30 }),
+
 		new EnvConfigSource(), // Allow overriding with env config if applicable
 		ConfigSourceAzureAppConfiguration.createDefault({ endpoint, labels })
 	])

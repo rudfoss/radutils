@@ -13,7 +13,7 @@ const start = async () => {
 	const config = await builder.build((req, opt) => {
 		return {
 			// This value is required so we define it using "req". If the value is not found the builder will throw an error.
-			nodeEnv: req("NODE_ENV"),
+			nodeEnv: opt<string>("NODE_ENV"),
 
 			//EnvConfigSource will normalize this name for us
 			userName: req("userName"),
@@ -41,9 +41,9 @@ const start = async () => {
 	console.log(config.environment.paths) // This would be a string array since we used asList above
 
 	// We can use the same builder to create another config object if we want
-	const frontEndConfig = await builder.build((req) => {
+	const frontEndConfig = await builder.build((req, opt) => {
 		return {
-			runtimeEnv: req("NODE_ENV"),
+			runtimeEnv: opt<string>("NODE_ENV"),
 			currentUserName: req("USERNAME")
 		}
 	})
