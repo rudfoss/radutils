@@ -1,6 +1,6 @@
 {
 	"name": "@radutils/config-builder-source-azure",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "commonjs",
 	"private": false,
 	"description": "Config Builder source for Azure App Configuration service endpoints with Key Vault reference support",
@@ -24,6 +24,6 @@
 		"typescript"
 	],
 	"peerDependencies": {
-		"@radutils/config-builder": "0.0.3-beta.5"
+		"@radutils/config-builder": "0.1.0"
 	}
 }
