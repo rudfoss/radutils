@@ -1,11 +1,11 @@
 import type { ConfigSource } from "@radutils/config-builder"
 import type { TokenCredential } from "@azure/identity"
 import type { ConfigurationSetting } from "@azure/app-configuration"
-import { DefaultAzureCredential } from "@azure/identity"
 import { AppConfigurationClient } from "@azure/app-configuration"
 import { ContentTypeResolver } from "./ContentTypeResolver"
 import { jsonResolver, jsonContentType, keyVaultReferenceContentType, keyVaultResolver } from "./contentTypeResolvers"
 import { ConfigBuilderAzureSourceContentTypeResolverError } from "./errors"
+import { getFixedDefaultAzureCredential } from "./utils/getFixedDefaultAzureCredential"
 
 export interface ConfigSourceAzureAppConfigurationOptions {
 	/**
@@ -70,14 +70,19 @@ export class ConfigSourceAzureAppConfiguration implements ConfigSource {
 	protected async resolveContentType(configurationSetting: ConfigurationSetting): Promise<ResolvedConfigSetting> {
 		try {
 			for (const [contentTypeMatcher, resolver] of this.options.contentTypeResolvers.entries()) {
-				if (typeof contentTypeMatcher === "string" && (configurationSetting.contentType ?? "" === contentTypeMatcher)) {
-					const resolvedValue = await resolver(configurationSetting)
-					return { configurationSetting, resolvedValue: resolvedValue }
+				const contentTypeToMatch = configurationSetting.contentType ?? ""
+				if (typeof contentTypeMatcher === "string") {
+					if (contentTypeToMatch === contentTypeMatcher) {
+						const resolvedValue = await resolver(configurationSetting)
+						return { configurationSetting, resolvedValue: resolvedValue }
+					}
 				}
 
-				if ((contentTypeMatcher as RegExp).test(configurationSetting.contentType ?? "")) {
-					const resolvedValue = await resolver(configurationSetting)
-					return { configurationSetting, resolvedValue: resolvedValue }
+				if (contentTypeMatcher instanceof RegExp) {
+					if ((contentTypeMatcher as RegExp).test(configurationSetting.contentType ?? "")) {
+						const resolvedValue = await resolver(configurationSetting)
+						return { configurationSetting, resolvedValue: resolvedValue }
+					}
 				}
 			}
 
@@ -134,7 +139,7 @@ export class ConfigSourceAzureAppConfiguration implements ConfigSource {
 	 */
 	public static createDefault(options: ConfigSourceAzureAppConfigurationOptionsDefaultClient) {
 		const { credential, endpoint, contentTypeResolvers, ...rest } = options
-		const finalCredential = credential ?? new DefaultAzureCredential()
+		const finalCredential = credential ?? getFixedDefaultAzureCredential()
 
 		const allContentTypeResolvers = new Map([
 			[keyVaultReferenceContentType, keyVaultResolver({ credential: finalCredential })],
