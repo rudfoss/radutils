@@ -1,16 +1,16 @@
 {
 	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "libs/config-builder/src",
+	"sourceRoot": "libs/config-builder-source-azure/src",
 	"projectType": "library",
 	"targets": {
 		"build-swc": {
 			"executor": "@nrwl/js:swc",
 			"outputs": ["{options.outputPath}"],
 			"options": {
-				"outputPath": "dist/libs/config-builder",
-				"main": "libs/config-builder/src/index.ts",
-				"tsConfig": "libs/config-builder/tsconfig.lib.json",
-				"assets": ["libs/config-builder/*.md", "libs/config-builder/LICENSE"],
+				"outputPath": "dist/libs/config-builder-source-azure",
+				"main": "libs/config-builder-source-azure/src/index.ts",
+				"tsConfig": "libs/config-builder-source-azure/tsconfig.lib.json",
+				"assets": ["libs/config-builder-source-azure/*.md", "libs/config-builder-source-azure/LICENSE"],
 				"buildableProjectDepsInPackageJsonType": "dependencies"
 			}
 		},
@@ -23,13 +23,15 @@
 			],
 			"executor": "@nrwl/workspace:run-commands",
 			"options": {
-				"command": "node -r ts-node/register/transpile-only tools/scripts/fixLibBuildStructure.ts config-builder"
+				"commands": [
+					"node -r ts-node/register/transpile-only tools/scripts/fixLibBuildStructure.ts config-builder-source-azure"
+				]
 			}
 		},
 		"publish": {
 			"executor": "@nrwl/workspace:run-commands",
 			"options": {
-				"command": "node tools/scripts/publish.mjs config-builder {args.ver} {args.tag}"
+				"command": "node tools/scripts/publish.mjs config-builder-source-azure {args.ver} {args.tag}"
 			},
 			"dependsOn": [
 				{
@@ -42,14 +44,14 @@
 			"executor": "@nrwl/linter:eslint",
 			"outputs": ["{options.outputFile}"],
 			"options": {
-				"lintFilePatterns": ["libs/config-builder/**/*.ts"]
+				"lintFilePatterns": ["libs/config-builder-source-azure/**/*.ts"]
 			}
 		},
 		"test": {
 			"executor": "@nrwl/jest:jest",
-			"outputs": ["coverage/libs/config-builder"],
+			"outputs": ["coverage/libs/config-builder-source-azure"],
 			"options": {
-				"jestConfig": "libs/config-builder/jest.config.ts",
+				"jestConfig": "libs/config-builder-source-azure/jest.config.ts",
 				"passWithNoTests": false,
 				"codeCoverage": true
 			}

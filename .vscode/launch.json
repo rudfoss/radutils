@@ -18,13 +18,14 @@
 			"type": "pwa-node",
 			"request": "launch",
 			"args": ["${fileBasename}", "config-builder"],
-			"runtimeArgs": ["-r", "ts-node/register/transpile-only"],
+			"runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
 			"cwd": "${fileDirname}",
 			"outputCapture": "std",
 			"sourceMaps": true,
 			"resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
 			"env": {
 				"NODE_ENV": "development"
+				// "NODE_DEBUG": "module"
 			}
 		}
 	]

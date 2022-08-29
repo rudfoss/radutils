@@ -1,0 +1,29 @@
+{
+	"name": "@radutils/config-builder-source-azure",
+	"version": "0.1.1",
+	"type": "commonjs",
+	"private": false,
+	"description": "Config Builder source for Azure App Configuration service endpoints with Key Vault reference support",
+	"sideEffects": "false",
+	"license": "MIT",
+	"publishConfig": {
+		"access": "public",
+		"tag": "beta"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/rudfoss/radutils.git"
+	},
+	"bugs": {
+		"url": "https://github.com/rudfoss/radutils/issues"
+	},
+	"homepage": "https://github.com/rudfoss/radutils/tree/main/libs/config-builder-source-azure",
+	"author": "Thomas Haugland Rudfoss",
+	"keywords": [
+		"config",
+		"typescript"
+	],
+	"peerDependencies": {
+		"@radutils/config-builder": "0.1.0"
+	}
+}
