@@ -1,4 +1,5 @@
 {
+	"name": "config-builder",
 	"$schema": "../../node_modules/nx/schemas/project-schema.json",
 	"sourceRoot": "libs/config-builder/src",
 	"projectType": "library",
@@ -21,13 +22,13 @@
 					"target": "build-swc"
 				}
 			],
-			"executor": "@nrwl/workspace:run-commands",
+			"executor": "nx:run-commands",
 			"options": {
 				"command": "node -r ts-node/register/transpile-only tools/scripts/fixLibBuildStructure.ts config-builder"
 			}
 		},
 		"publish": {
-			"executor": "@nrwl/workspace:run-commands",
+			"executor": "nx:run-commands",
 			"options": {
 				"command": "node tools/scripts/publish.mjs config-builder {args.ver} {args.tag}"
 			},
@@ -47,7 +48,7 @@
 		},
 		"test": {
 			"executor": "@nrwl/jest:jest",
-			"outputs": ["coverage/libs/config-builder"],
+			"outputs": ["{workspaceRoot}/coverage/libs/config-builder"],
 			"options": {
 				"jestConfig": "libs/config-builder/jest.config.ts",
 				"passWithNoTests": false,

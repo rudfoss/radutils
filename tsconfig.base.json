@@ -19,9 +19,9 @@
 		"baseUrl": ".",
 		"paths": {
 			"@radutils/config-builder": ["libs/config-builder/src/index.ts"],
-			"@radutils/config-builder/*": ["libs/config-builder/src/*"],
 			"@radutils/config-builder-source-azure": ["libs/config-builder-source-azure/src/index.ts"],
-			"@radutils/config-builder-source-azure/*": ["libs/config-builder-source-azure/src/*"]
+			"@radutils/config-builder-source-azure/*": ["libs/config-builder-source-azure/src/*"],
+			"@radutils/config-builder/*": ["libs/config-builder/src/*"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]
