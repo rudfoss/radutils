@@ -124,5 +124,5 @@ To handle errors during build you can wrap the `build()` call in a `try/catch` b
 
 Version|Description
 -|-
-`v0.1.1`|Updated dependencies
+`v0.1.1`|Updated most dependencies
 `v0.1.0`|Initial release
