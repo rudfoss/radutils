@@ -119,3 +119,10 @@ Name|Description
 All errors that occur within the lifecycle of building configurations will inherit from the `ConfigBuilderError` base error class. Some of them indicate directly what happened, but others (such as `ConfigBuilderResolveValueError`) may wrap a generic error.
 
 To handle errors during build you can wrap the `build()` call in a `try/catch` block. For most situations the error will be an instance of `ConfigBuilderError` which can be further narrowed to one of the error classes defined [here](./src/errors).
+
+# Changelog
+
+Version|Description
+-|-
+`v0.1.1`|Updated dependencies
+`v0.1.0`|Initial release
