@@ -1,11 +1,10 @@
 import type { ConfigSource } from "@radutils/config-builder"
-import type { TokenCredential } from "@azure/identity"
+import { DefaultAzureCredential, TokenCredential } from "@azure/identity"
 import type { ConfigurationSetting } from "@azure/app-configuration"
 import { AppConfigurationClient } from "@azure/app-configuration"
 import { ContentTypeResolver } from "./ContentTypeResolver"
 import { jsonResolver, jsonContentType, keyVaultReferenceContentType, keyVaultResolver } from "./contentTypeResolvers"
 import { ConfigBuilderAzureSourceContentTypeResolverError } from "./errors"
-import { getFixedDefaultAzureCredential } from "./utils/getFixedDefaultAzureCredential"
 
 export interface ConfigSourceAzureAppConfigurationOptions {
 	/**
@@ -41,6 +40,11 @@ export interface ConfigSourceAzureAppConfigurationOptionsDefaultClient
 	 * @default DefaultAzureCredential
 	 */
 	credential?: TokenCredential
+
+	/**
+	 * Override the options used when creating a default credential instance. If this object is defined none of the default values are used.
+	 */
+	defaultCredentialOptions?: ConstructorParameters<typeof DefaultAzureCredential>[0]
 }
 
 export interface ResolvedConfigSetting<TValue = unknown> {
@@ -138,8 +142,8 @@ export class ConfigSourceAzureAppConfiguration implements ConfigSource {
 	 * @param options
 	 */
 	public static createDefault(options: ConfigSourceAzureAppConfigurationOptionsDefaultClient) {
-		const { credential, endpoint, contentTypeResolvers, ...rest } = options
-		const finalCredential = credential ?? getFixedDefaultAzureCredential()
+		const { credential, endpoint, contentTypeResolvers, defaultCredentialOptions, ...rest } = options
+		const finalCredential = credential ?? new DefaultAzureCredential(defaultCredentialOptions)
 
 		const allContentTypeResolvers = new Map([
 			[keyVaultReferenceContentType, keyVaultResolver({ credential: finalCredential })],
