@@ -31,6 +31,9 @@ const start = async () => {
 	invariant(fs.existsSync(packageJsonPath), `No package.json found at expected path "${packageJsonPath}"`)
 	const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"))
 
+	// remove useless exports
+	delete packageJson["exports"]
+
 	packageJson.main = "./index.js"
 	packageJson.typings = "./index.d.ts"
 	fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))

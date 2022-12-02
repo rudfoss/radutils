@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BuildRunContext } from "@radutils/config-builder/ConfigBuilderTypes"
+import { BuildRunContext } from "../../ConfigBuilderTypes"
 import { CacheConfigSource } from "./CacheConfigSource"
 import { CacheService } from "./CacheConfigSourceTypes"
 import { MemoryCache } from "./cacheServices"

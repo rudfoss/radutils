@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NPMCache } from "./NPMCache"
 import path from "path"
-import { ConfigBuilderError } from "@radutils/config-builder/errors"
+import { ConfigBuilderError } from "../../../errors"
 
 const STATIC_NOW = 1660539328281
 const ONE_MINUTE = 1000 * 60

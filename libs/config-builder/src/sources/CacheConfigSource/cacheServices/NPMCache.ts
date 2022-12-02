@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { CacheService } from "../CacheConfigSourceTypes"
 import findCacheDir from "find-cache-dir"
-import { ConfigBuilderError } from "@radutils/config-builder/errors"
+import { ConfigBuilderError } from "../../../errors"
 import path from "path"
 import fs from "fs"
 
