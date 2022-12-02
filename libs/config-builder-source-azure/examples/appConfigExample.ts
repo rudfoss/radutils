@@ -30,7 +30,7 @@ const start = async () => {
 	// Build config
 	// Change keys to reflect your App Configuration settings
 	const config = await builder.build((req, opt) => ({
-		test: req("test-value"),
+		test: req("test"),
 		overridden: opt("overridden", false, asBoolean())
 	}))
 	console.timeEnd("build")
