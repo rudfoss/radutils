@@ -24,6 +24,6 @@
 		"typescript"
 	],
 	"peerDependencies": {
-		"@radutils/config-builder": "0.1.1"
+		"@radutils/config-builder": "^0.1.1"
 	}
 }
